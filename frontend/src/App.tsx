@@ -1,8 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './views/Home';
+import Home from './views/home';
 import ListaGestantes from './views/gestante/ListaGestantes';
 import FormGestante from './views/gestante/FormGestante';
 import DetalheGestante from './views/gestante/DetalheGestante';
+import ListaAdministradores from './views/administrador/ListaAdministradores';
+import FormAdministrador from './views/administrador/FormAdministrador';
 
 function App() {
   return (
@@ -15,6 +17,9 @@ function App() {
           <Route path="/nova" element={<FormGestante />} />
           <Route path="/editar/:id" element={<FormGestante />} />
           <Route path="/gestantes/:id" element={<DetalheGestante />} />
+          <Route path="/administradores" element={<ListaAdministradores />} />
+          <Route path="/administradores/novo" element={<FormAdministrador />} />
+          <Route path="/administradores/editar/:id" element={<FormAdministrador />} />
         </Routes>
       </div>
     </BrowserRouter>
