@@ -1,8 +1,8 @@
 // frontend/src/views/DetalheGestante.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { buscarUsuario, listarMensagens } from '../services/usuarios.api';
-import type { Usuario, Mensagem } from '../types/Usuario';
+import { buscarUsuario, listarMensagens } from '../../services/usuarios.api';
+import type { Usuario, Mensagem } from '../../types/Usuario';
 
 const DetalheGestante: React.FC = () => {
   const { id } = useParams<{ id: string }>();

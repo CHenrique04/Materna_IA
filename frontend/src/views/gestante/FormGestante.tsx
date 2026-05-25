@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { criarUsuario, atualizarUsuario, buscarUsuario } from '../services/usuarios.api';
+import { criarUsuario, atualizarUsuario, buscarUsuario } from '../../services/usuarios.api';
 //import type { Usuario } from '../types/Usuario';
 
 const FormGestante: React.FC = () => {

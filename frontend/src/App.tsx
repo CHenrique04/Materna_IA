@@ -1,18 +1,22 @@
-// frontend/src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import ListaGestantes from './views/ListaGestantes';
-import FormGestante from './views/FormGestante';
-import DetalheGestante from './views/DetalheGestante';
+import Home from './views/Home';
+import ListaGestantes from './views/gestante/ListaGestantes';
+import FormGestante from './views/gestante/FormGestante';
+import DetalheGestante from './views/gestante/DetalheGestante';
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ListaGestantes />} />
-        <Route path="/nova" element={<FormGestante />} />
-        <Route path="/editar/:id" element={<FormGestante />} />
-        <Route path="/gestantes/:id" element={<DetalheGestante />} />
-      </Routes>
+      {/* Container principal para manter o fundo escuro globalmente */}
+      <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', margin: 0, padding: 0 }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/gestantes" element={<ListaGestantes />} />
+          <Route path="/nova" element={<FormGestante />} />
+          <Route path="/editar/:id" element={<FormGestante />} />
+          <Route path="/gestantes/:id" element={<DetalheGestante />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }

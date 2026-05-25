@@ -1,8 +1,8 @@
 // frontend/src/views/ListaGestantes.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listarUsuarios, deletarUsuario } from '../services/usuarios.api';
-import type { Usuario } from '../types/Usuario';
+import { listarUsuarios, deletarUsuario } from '../../services/usuarios.api';
+import type { Usuario } from '../../types/Usuario';
 
 const ListaGestantes: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
