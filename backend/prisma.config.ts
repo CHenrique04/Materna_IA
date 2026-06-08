@@ -1,4 +1,3 @@
-// backend/prisma.config.ts
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 

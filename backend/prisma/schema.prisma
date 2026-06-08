@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model Administrador {
@@ -12,7 +13,7 @@ model Administrador {
   email     String   @unique
   cargo     String   // "ADMIN_GERAL", "COORDENADOR", "SECRETARIO", "TECNICO"
   municipio String
-  senhaHash String   // para armazenar hash da senha
+  senhaHash String
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -22,8 +23,8 @@ model Usuario {
   id                     Int       @id @default(autoincrement())
   nome                   String
   telefone               String    @unique
-  dataNascimento         String?   // ISO date
-  dataUltimaMenstruacao  String?   // ISO date
+  dataNascimento         String?
+  dataUltimaMenstruacao  String?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
@@ -34,7 +35,7 @@ model Usuario {
 
 model Mensagem {
   id         Int      @id @default(autoincrement())
-  texto      String
+  texto      String   @db.Text
   direcao    String   // "entrada" ou "saida"
   createdAt  DateTime @default(now())
 
@@ -45,9 +46,9 @@ model Mensagem {
 model Exame {
   id         Int      @id @default(autoincrement())
   tipo       String
-  dataExame  String?  // ISO date
-  resultado  String?  // texto ou link
-  arquivoUrl String?  // opcional
+  dataExame  String?
+  resultado  String?  @db.Text
+  arquivoUrl String?
 
   usuarioId  Int
   usuario    Usuario  @relation(fields: [usuarioId], references: [id])
@@ -55,7 +56,7 @@ model Exame {
 
 model Consulta {
   id         Int      @id @default(autoincrement())
-  dataHora   String   // ISO datetime
+  dataHora   String
   local      String
   status     String   // "agendada", "realizada", "cancelada"
 
