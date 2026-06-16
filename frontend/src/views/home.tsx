@@ -1,66 +1,81 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', color: '#f8fafc', fontFamily: 'sans-serif' }}>
+    <div className="container mx-auto p-6 max-w-6xl">
       
       {/* Cabeçalho do Dashboard */}
-      <header style={{ borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '2.5rem', margin: 0, color: '#f8fafc' }}>
-          Materna<span style={{ color: '#2dd4bf' }}>.IA</span>
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: '1.2rem', marginTop: '10px' }}>
-          Painel de Controle - Sistema Distribuído de Triagem
+      <header className="mb-8 border-b border-gray-200 pb-6 mt-4">
+        <p className="text-gray-500 text-lg mt-2">
+          Painel de Controle - Sistema Distribuído de Triagem e Monitoramento
         </p>
       </header>
 
-      {/* Grid de Cartões (Módulos) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+      {/* Grid de Métricas (Para impressionar na apresentação) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Gestantes Ativas</div>
+          <div className="text-3xl font-bold text-blue-600 mt-2">142</div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Consultas Hoje</div>
+          <div className="text-3xl font-bold text-green-500 mt-2">18</div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Alertas Críticos</div>
+          <div className="text-3xl font-bold text-red-500 mt-2">5</div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Nós / Municípios</div>
+          <div className="text-3xl font-bold text-purple-600 mt-2">4</div>
+        </div>
+      </div>
+
+      {/* Módulos do Sistema */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Módulos de Gestão</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Cartão de Gestantes */}
-        <div style={{ backgroundColor: '#1e293b', padding: '30px', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 15px 0', color: '#2dd4bf', fontSize: '1.5rem' }}>👩‍⚕️ Gestantes</h2>
-          <p style={{ color: '#cbd5e1', marginBottom: '30px', lineHeight: '1.5', flexGrow: 1 }}>
-            Gerencie o cadastro, visualize os prontuários e monitore os dados das pacientes cadastradas no sistema.
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
+          <h2 className="text-xl font-bold text-blue-600 mb-3">👩‍⚕️ Gestantes</h2>
+          <p className="text-gray-600 mb-6 flex-grow leading-relaxed">
+            Gerencie o cadastro, visualize os prontuários e monitore os dados clínicos das pacientes no sistema.
           </p>
           <Link 
             to="/gestantes" 
-            style={{ 
-              display: 'block', 
-              textAlign: 'center', 
-              backgroundColor: '#2dd4bf', 
-              color: '#0f172a', 
-              padding: '12px 20px', 
-              textDecoration: 'none', 
-              borderRadius: '6px', 
-              fontWeight: 'bold',
-              transition: 'background 0.2s'
-            }}
+            className="block text-center bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-semibold transition-colors"
           >
-            Acessar Módulo
+            Acessar Prontuários
           </Link>
         </div>
 
-        {/* Cartão de Alertas (Visual para o Professor ver potencial futuro) */}
-        <div style={{ backgroundColor: '#1e293b', padding: '30px', borderRadius: '12px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
-          <h2 style={{ margin: '0 0 15px 0', color: '#fbbf24', fontSize: '1.5rem' }}>⚠️ Alertas (Em breve)</h2>
-          <p style={{ color: '#cbd5e1', marginBottom: '30px', lineHeight: '1.5', flexGrow: 1 }}>
-            Painel de recebimento das mensagens do WhatsApp e notificações de triagem de alto risco.
+        {/* Cartão de Administradores */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
+          <h2 className="text-xl font-bold text-indigo-600 mb-3">👥 Administradores</h2>
+          <p className="text-gray-600 mb-6 flex-grow leading-relaxed">
+            Controle os acessos, cargos e lotações de municípios dos gestores e profissionais de saúde.
+          </p>
+          <Link 
+            to="/administradores" 
+            className="block text-center bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-lg font-semibold transition-colors"
+          >
+            Acessar Controle
+          </Link>
+        </div>
+
+        {/* Cartão de Alertas (Visual) */}
+        <div className="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200 flex flex-col">
+          <h2 className="text-xl font-bold text-orange-500 mb-3">⚠️ Monitor de Webhook</h2>
+          <p className="text-gray-500 mb-6 flex-grow leading-relaxed">
+            Painel de recebimento das mensagens descentralizadas do WhatsApp e motor de inferência.
           </p>
           <button 
             disabled 
-            style={{ 
-              width: '100%',
-              backgroundColor: '#475569', 
-              color: '#94a3b8', 
-              padding: '12px 20px', 
-              border: 'none', 
-              borderRadius: '6px', 
-              cursor: 'not-allowed',
-              fontWeight: 'bold'
-            }}
+            className="block w-full text-center bg-gray-300 text-gray-500 py-2.5 px-4 rounded-lg font-semibold cursor-not-allowed"
           >
-            Módulo em Desenvolvimento
+            Em Desenvolvimento
           </button>
         </div>
 

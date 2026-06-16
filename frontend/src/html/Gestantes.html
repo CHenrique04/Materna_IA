@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestantes - Painel Administrativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">👩‍👧 Gestantes Cadastradas</h1>
+      <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">+ Nova Gestante</button>
+    </div>
+
+    <div class="overflow-x-auto bg-white rounded-lg shadow">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Nasc.</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cadastro</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr>
+            <td class="px-6 py-4">Maria da Silva</td>
+            <td class="px-6 py-4">(11) 99999-1234</td>
+            <td class="px-6 py-4">15/03/1990</td>
+            <td class="px-6 py-4">02/06/2025</td>
+            <td class="px-6 py-4 space-x-2">
+              <button class="text-blue-600 hover:text-blue-900">Detalhes</button>
+              <button class="text-yellow-600 hover:text-yellow-900">Editar</button>
+              <button class="text-red-600 hover:text-red-900">Excluir</button>
+            </td>
+          </tr>
+          <tr>
+            <td class="px-6 py-4">Ana Beatriz Costa</td>
+            <td class="px-6 py-4">(21) 98888-5678</td>
+            <td class="px-6 py-4">22/11/1985</td>
+            <td class="px-6 py-4">03/06/2025</td>
+            <td class="px-6 py-4 space-x-2">
+              <button class="text-blue-600 hover:text-blue-900">Detalhes</button>
+              <button class="text-yellow-600 hover:text-yellow-900">Editar</button>
+              <button class="text-red-600 hover:text-red-900">Excluir</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

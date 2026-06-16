@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { criarUsuario, atualizarUsuario, buscarUsuario } from '../../services/usuarios.api';
-//import type { Usuario } from '../types/Usuario';
 
 const FormGestante: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +16,6 @@ const FormGestante: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carrega dados para edição
   useEffect(() => {
     if (isEditing && id) {
       const carregarUsuario = async () => {
@@ -50,15 +48,8 @@ const FormGestante: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    // Validação simples
-    if (!formData.nome.trim()) {
-      setError('Nome é obrigatório');
-      return;
-    }
-    if (!formData.telefone.trim()) {
-      setError('Telefone é obrigatório');
-      return;
-    }
+    if (!formData.nome.trim()) { setError('Nome é obrigatório'); return; }
+    if (!formData.telefone.trim()) { setError('Telefone é obrigatório'); return; }
 
     try {
       setLoading(true);
@@ -69,7 +60,7 @@ const FormGestante: React.FC = () => {
         await criarUsuario(formData);
         alert('Gestante criada com sucesso!');
       }
-      navigate('/');
+      navigate('/gestantes');
     } catch (err: any) {
       console.error(err);
       if (err.response?.status === 409) {
@@ -82,15 +73,13 @@ const FormGestante: React.FC = () => {
     }
   };
 
-  if (loading && isEditing) {
-    return <div className="p-4">Carregando dados...</div>;
-  }
+  if (loading && isEditing) return <div className="p-4 text-center">Carregando dados...</div>;
 
   return (
     <div className="container mx-auto p-4 max-w-md">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-6">
-          {isEditing ? 'Editar Gestante' : 'Nova Gestante'}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800">
+          {isEditing ? '✏️ Editar Gestante' : '➕ Nova Gestante'}
         </h1>
 
         {error && (
@@ -101,38 +90,33 @@ const FormGestante: React.FC = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Nome *
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Nome completo *</label>
             <input
               type="text"
               name="nome"
               value={formData.nome}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: Maria da Silva"
               required
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Telefone *
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Telefone (WhatsApp) *</label>
             <input
               type="tel"
               name="telefone"
               value={formData.telefone}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="(11) 99999-9999"
+              placeholder="(11) 99999-1234"
               required
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Data de Nascimento
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Data de Nascimento</label>
             <input
               type="date"
               name="dataNascimento"
@@ -143,9 +127,7 @@ const FormGestante: React.FC = () => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Data da Última Menstruação
-            </label>
+            <label className="block text-gray-700 text-sm font-bold mb-2">Data da Última Menstruação (DUM)</label>
             <input
               type="date"
               name="dataUltimaMenstruacao"
@@ -165,8 +147,8 @@ const FormGestante: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              onClick={() => navigate('/gestantes')}
+              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
             >
               Cancelar
             </button>

@@ -21,6 +21,7 @@ export class UsuarioService {
     });
     return usuario;
   }
+  
 
   async criar(data: CreateUsuarioDTO): Promise<UsuarioResponse> {
     // Validação simples: telefone é obrigatório

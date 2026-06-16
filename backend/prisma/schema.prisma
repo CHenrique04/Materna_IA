@@ -3,62 +3,93 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
 }
 
+// ------------------------------------------------------
+// ENUMS (Garantem que apenas estes valores sejam aceitos)
+// ------------------------------------------------------
+enum CargoAdmin {
+  ADMIN_GERAL
+  COORDENADOR
+  SECRETARIO
+  TECNICO
+}
+
+enum DirecaoMensagem {
+  entrada
+  saida
+}
+
+enum StatusConsulta {
+  agendada
+  realizada
+  cancelada
+}
+
+// ------------------------------------------------------
+// MODELS
+// ------------------------------------------------------
 model Administrador {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   nome      String
-  email     String   @unique
-  cargo     String   // "ADMIN_GERAL", "COORDENADOR", "SECRETARIO", "TECNICO"
+  email     String     @unique
+  cargo     CargoAdmin 
   municipio String
-  senhaHash String   // para armazenar hash da senha
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  senhaHash String
+  ativo     Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Usuario {
-  id                     Int       @id @default(autoincrement())
-  nome                   String
-  telefone               String    @unique
-  dataNascimento         String?   // ISO date
-  dataUltimaMenstruacao  String?   // ISO date
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  id                    Int       @id @default(autoincrement())
+  nome                  String
+  telefone              String    @unique
+  dataNascimento        DateTime? @db.Date // Salva apenas a data (YYYY-MM-DD)
+  dataUltimaMenstruacao DateTime? @db.Date 
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  mensagens  Mensagem[]
-  exames     Exame[]
-  consultas  Consulta[]
+  mensagens Mensagem[]
+  exames    Exame[]
+  consultas Consulta[]
 }
 
 model Mensagem {
-  id         Int      @id @default(autoincrement())
-  texto      String
-  direcao    String   // "entrada" ou "saida"
-  createdAt  DateTime @default(now())
+  id        Int             @id @default(autoincrement())
+  texto     String          @db.Text // Permite textos longos
+  direcao   DirecaoMensagem
+  createdAt DateTime        @default(now())
 
-  usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Índice para acelerar a busca de mensagens por usuário
+  @@index([usuarioId])
 }
 
 model Exame {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   tipo       String
-  dataExame  String?  // ISO date
-  resultado  String?  // texto ou link
-  arquivoUrl String?  // opcional
+  dataExame  DateTime? @db.Date
+  resultado  String?   @db.Text
+  arquivoUrl String?   
 
   usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario    Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }
 
 model Consulta {
-  id         Int      @id @default(autoincrement())
-  dataHora   String   // ISO datetime
-  local      String
-  status     String   // "agendada", "realizada", "cancelada"
+  id        Int            @id @default(autoincrement())
+  dataHora  DateTime       // Salva data e hora
+  local     String
+  status    StatusConsulta @default(agendada)
 
-  usuarioId  Int
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }

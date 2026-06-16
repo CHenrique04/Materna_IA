@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes da Gestante - Painel Administrativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4">
+    <!-- Botão voltar -->
+    <div class="mb-4">
+      <button class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">← Voltar</button>
+    </div>
+
+    <!-- Dados pessoais -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h1 class="text-2xl font-bold mb-2 text-gray-800">Maria da Silva</h1>
+      <p><strong>Telefone:</strong> (11) 99999-1234</p>
+      <p><strong>Data de Nascimento:</strong> 15/03/1990</p>
+      <p><strong>Data da Última Menstruação:</strong> 01/03/2025</p>
+      <p><strong>Cadastro:</strong> 02/06/2025</p>
+    </div>
+
+    <!-- Abas -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="flex border-b">
+        <button class="tab-active px-6 py-3 text-sm font-medium focus:outline-none">📝 Conversas</button>
+        <button class="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900">🩺 Exames</button>
+        <button class="px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900">📅 Consultas</button>
+      </div>
+
+      <!-- Conteúdo da aba Conversas -->
+      <div class="p-6">
+        <div class="space-y-3 max-h-96 overflow-y-auto">
+          <div class="flex justify-start">
+            <div class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xs">Oi, estou com muitas náuseas. O que posso fazer?</div>
+          </div>
+          <div class="flex justify-end">
+            <div class="bg-blue-500 text-white px-4 py-2 rounded-lg max-w-xs">Enjôos são comuns. Tente comer biscoitos de água e sal ao acordar e evite odores fortes. Consulte seu médico se persistir.</div>
+          </div>
+          <div class="flex justify-start">
+            <div class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xs">Obrigada! E sobre alimentação, posso comer sushi?</div>
+          </div>
+          <div class="flex justify-end">
+            <div class="bg-blue-500 text-white px-4 py-2 rounded-lg max-w-xs">Peixe cru deve ser evitado na gestação devido ao risco de toxoplasmose. Prefira alimentos bem cozidos.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

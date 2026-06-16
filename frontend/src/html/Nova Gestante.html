@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova Gestante - Painel Administrativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="container mx-auto p-4 max-w-md">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h1 class="text-2xl font-bold mb-6 text-gray-800">➕ Nova Gestante</h1>
+
+      <form>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Nome completo *</label>
+          <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: Maria da Silva">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Telefone (WhatsApp) *</label>
+          <input type="tel" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="(11) 99999-1234">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Data de Nascimento</label>
+          <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded">
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Data da Última Menstruação (DUM)</label>
+          <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded">
+        </div>
+
+        <div class="flex gap-4">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Salvar</button>
+          <button type="button" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

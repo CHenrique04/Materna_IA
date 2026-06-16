@@ -41,107 +41,105 @@ const ListaGestantes: React.FC = () => {
     }
   };
 
+  // Ajustei o loading para o tema claro
   if (loading) return (
     <div className="flex justify-center items-center h-64">
-      <div className="text-teal-400 font-medium animate-pulse text-lg">Carregando prontuários...</div>
+      <div className="text-blue-600 font-medium animate-pulse text-lg">Carregando prontuários...</div>
     </div>
   );
   
+  // Ajustei o erro para o tema claro
   if (error) return (
-    <div className="container mx-auto p-6 mt-6 bg-rose-500/10 border border-rose-500/20 rounded-lg text-center">
-      <span className="text-rose-400 font-medium">{error}</span>
+    <div className="container mx-auto p-6 mt-6 bg-red-100 border border-red-400 rounded-lg text-center">
+      <span className="text-red-700 font-medium">{error}</span>
     </div>
   );
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto p-4">
+      
       {/* Cabeçalho */}
-      <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">Gestantes</h1>
-          <p className="text-slate-400 mt-1 text-sm">Gerenciamento de prontuários e pacientes ativas.</p>
-        </div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">👩‍👧 Gestantes Cadastradas</h1>
         <button
           onClick={() => navigate('/nova')}
-          className="bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold px-5 py-2.5 rounded-lg shadow-lg shadow-teal-500/20 transition-all active:scale-95"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition-colors"
         >
           + Nova Gestante
         </button>
       </div>
 
       {/* Tabela */}
-      <div className="bg-slate-800 shadow-xl rounded-xl border border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-700/50">
-            <thead className="bg-slate-900/50">
+      <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Nome
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Telefone
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Data Nasc.
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Cadastro
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {usuarios.length === 0 ? (
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                  Nome
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                  Telefone
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                  Data de Nascimento
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                  Cadastro
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-teal-400 uppercase tracking-wider">
-                  Ações
-                </th>
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500 italic">
+                  Nenhuma gestante cadastrada no sistema.
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/50">
-              {usuarios.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">
-                    Nenhuma gestante cadastrada no sistema.
+            ) : (
+              usuarios.map((usuario) => (
+                <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">
+                    {usuario.nome}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                    {usuario.telefone}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                    {usuario.dataNascimento
+                      ? new Date(usuario.dataNascimento).toLocaleDateString()
+                      : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
+                    {new Date(usuario.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap space-x-3 text-sm font-medium">
+                    <button
+                      onClick={() => navigate(`/gestantes/${usuario.id}`)}
+                      className="text-blue-600 hover:text-blue-900 transition-colors"
+                    >
+                      Detalhes
+                    </button>
+                    <button
+                      onClick={() => navigate(`/editar/${usuario.id}`)}
+                      className="text-yellow-600 hover:text-yellow-900 transition-colors"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleExcluir(usuario.id, usuario.nome)}
+                      className="text-red-600 hover:text-red-900 transition-colors"
+                    >
+                      Excluir
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                usuarios.map((usuario) => (
-                  <tr key={usuario.id} className="hover:bg-slate-700/30 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-200">
-                      {usuario.nome}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-400 text-sm">
-                      {usuario.telefone}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-400 text-sm">
-                      {usuario.dataNascimento
-                        ? new Date(usuario.dataNascimento).toLocaleDateString()
-                        : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-slate-400 text-sm">
-                      {new Date(usuario.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right space-x-3 opacity-90 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => navigate(`/gestantes/${usuario.id}`)}
-                        className="inline-flex items-center text-xs font-medium text-blue-400 bg-blue-400/10 hover:bg-blue-400/20 px-3 py-1.5 rounded-md transition-colors"
-                      >
-                        Detalhes
-                      </button>
-                      <button
-                        onClick={() => navigate(`/editar/${usuario.id}`)}
-                        className="inline-flex items-center text-xs font-medium text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 px-3 py-1.5 rounded-md transition-colors"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleExcluir(usuario.id, usuario.nome)}
-                        className="inline-flex items-center text-xs font-medium text-rose-400 bg-rose-400/10 hover:bg-rose-400/20 px-3 py-1.5 rounded-md transition-colors"
-                      >
-                        Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

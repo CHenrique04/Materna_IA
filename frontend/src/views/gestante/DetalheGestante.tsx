@@ -7,10 +7,14 @@ import type { Usuario, Mensagem } from '../../types/Usuario';
 const DetalheGestante: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Novo estado para controlar qual aba está aparecendo
+  const [abaAtiva, setAbaAtiva] = useState<'conversas' | 'exames' | 'consultas'>('conversas');
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -34,69 +38,116 @@ const DetalheGestante: React.FC = () => {
     carregarDados();
   }, [id]);
 
-  if (loading) return <div className="p-4">Carregando dados...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
-  if (!usuario) return <div className="p-4">Gestante não encontrada</div>;
+  if (loading) return <div className="p-4 text-center text-blue-600 font-medium">Carregando dados da paciente...</div>;
+  if (error) return <div className="p-4 text-center text-red-600 font-medium">{error}</div>;
+  if (!usuario) return <div className="p-4 text-center text-gray-500">Gestante não encontrada</div>;
+
+  // Função auxiliar para mudar a cor da aba quando ela estiver selecionada
+  const getTabClass = (aba: string) => {
+    return abaAtiva === aba
+      ? "border-b-2 border-blue-600 text-blue-600 px-6 py-3 text-sm font-medium focus:outline-none"
+      : "px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 focus:outline-none transition-colors";
+  };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 max-w-4xl">
+      {/* Botão voltar */}
       <div className="mb-4">
         <button
-          onClick={() => navigate('/')}
-          className="bg-gray-500 hover:bg-gray-700 text-white py-2 px-4 rounded"
+          onClick={() => navigate('/gestantes')}
+          className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors"
         >
           ← Voltar
         </button>
       </div>
 
       {/* Dados pessoais */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h1 className="text-2xl font-bold mb-2">{usuario.nome}</h1>
-        <p><strong>Telefone:</strong> {usuario.telefone}</p>
-        <p><strong>Data de Nascimento:</strong> {usuario.dataNascimento || 'Não informada'}</p>
-        <p><strong>Data da Última Menstruação:</strong> {usuario.dataUltimaMenstruacao || 'Não informada'}</p>
-        <p><strong>Cadastrado em:</strong> {new Date(usuario.createdAt).toLocaleDateString()}</p>
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2 text-gray-800">{usuario.nome}</h1>
+        <p className="text-gray-700"><strong>Telefone:</strong> {usuario.telefone}</p>
+        <p className="text-gray-700"><strong>Data de Nascimento:</strong> {usuario.dataNascimento ? new Date(usuario.dataNascimento).toLocaleDateString() : 'Não informada'}</p>
+        <p className="text-gray-700"><strong>Data da Última Menstruação:</strong> {usuario.dataUltimaMenstruacao ? new Date(usuario.dataUltimaMenstruacao).toLocaleDateString() : 'Não informada'}</p>
+        <p className="text-gray-700"><strong>Cadastro:</strong> {new Date(usuario.createdAt).toLocaleDateString()}</p>
       </div>
 
-      {/* Log de Conversas */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">📝 Histórico de Conversas</h2>
-        {mensagens.length === 0 ? (
-          <p className="text-gray-500">Nenhuma mensagem trocada ainda.</p>
-        ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto border p-3 rounded">
-            {mensagens.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.direcao === 'entrada' ? 'justify-start' : 'justify-end'}`}
-              >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    msg.direcao === 'entrada'
-                      ? 'bg-gray-200 text-gray-800'
-                      : 'bg-blue-500 text-white'
-                  }`}
-                >
-                  <p>{msg.texto}</p>
-                  <p className="text-xs mt-1 opacity-70">
-                    {new Date(msg.createdAt).toLocaleString()}
-                  </p>
+      {/* Abas */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        
+        {/* Navegação das Abas */}
+        <div className="flex border-b border-gray-200 bg-gray-50/50">
+          <button 
+            onClick={() => setAbaAtiva('conversas')} 
+            className={getTabClass('conversas')}
+          >
+            📝 Conversas
+          </button>
+          <button 
+            onClick={() => setAbaAtiva('exames')} 
+            className={getTabClass('exames')}
+          >
+            🩺 Exames
+          </button>
+          <button 
+            onClick={() => setAbaAtiva('consultas')} 
+            className={getTabClass('consultas')}
+          >
+            📅 Consultas
+          </button>
+        </div>
+
+        {/* Conteúdo Dinâmico das Abas */}
+        <div className="p-6">
+          
+          {/* Aba: Conversas */}
+          {abaAtiva === 'conversas' && (
+            <div>
+              {mensagens.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">Nenhuma mensagem registrada no histórico.</p>
+              ) : (
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                  {mensagens.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.direcao === 'entrada' ? 'justify-start' : 'justify-end'}`}
+                    >
+                      <div
+                        className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md ${
+                          msg.direcao === 'entrada'
+                            ? 'bg-gray-200 text-gray-800' // Mensagem da Gestante
+                            : 'bg-blue-500 text-white shadow-sm' // Mensagem do Bot/Sistema
+                        }`}
+                      >
+                        <p className="leading-relaxed">{msg.texto}</p>
+                        <p className={`text-[10px] mt-1 text-right ${msg.direcao === 'entrada' ? 'text-gray-500' : 'text-blue-200'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              )}
+            </div>
+          )}
 
-      {/* Exames e Consultas (placeholders para desenvolvimento futuro) */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">🩺 Exames</h2>
-        <p className="text-gray-500">Em breve: gerenciamento de exames.</p>
-      </div>
+          {/* Aba: Exames */}
+          {abaAtiva === 'exames' && (
+            <div className="py-8 text-center">
+              <span className="text-4xl block mb-3">🩺</span>
+              <h3 className="text-lg font-semibold text-gray-800">Módulo de Exames</h3>
+              <p className="text-gray-500 mt-1">O gerenciamento de PDFs e resultados de exames será implementado nas próximas sprints.</p>
+            </div>
+          )}
 
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">📅 Consultas</h2>
-        <p className="text-gray-500">Em breve: agendamento e histórico de consultas.</p>
+          {/* Aba: Consultas */}
+          {abaAtiva === 'consultas' && (
+            <div className="py-8 text-center">
+              <span className="text-4xl block mb-3">📅</span>
+              <h3 className="text-lg font-semibold text-gray-800">Agenda de Consultas</h3>
+              <p className="text-gray-500 mt-1">O histórico de comparecimento e agendamento de consultas na UBS estará disponível em breve.</p>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
