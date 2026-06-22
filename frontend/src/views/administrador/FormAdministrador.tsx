@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-// Lembre-se de criar este arquivo de serviço com as funções do axios depois!
 import { criarAdministrador, atualizarAdministrador, buscarAdministrador } from '../../services/administradores.api';
 
 const FormAdministrador: React.FC = () => {
@@ -73,13 +72,15 @@ const FormAdministrador: React.FC = () => {
         await criarAdministrador(formData);
         alert('Administrador criado com sucesso!');
       }
-      navigate('/administradores'); // Ajuste para a rota onde ficará a sua lista de ADMs
+      navigate('/administradores');
     } catch (err: any) {
       console.error(err);
       if (err.response?.status === 409) {
         setError('E-mail já cadastrado no sistema');
       } else {
-        setError('Erro ao salvar administrador');
+        // A MÁGICA ACONTECE AQUI: Pega a mensagem exata de erro que o backend mandou
+        const mensagemErro = err.response?.data?.error || 'Erro ao salvar administrador';
+        setError(mensagemErro);
       }
     } finally {
       setLoading(false);
@@ -87,19 +88,19 @@ const FormAdministrador: React.FC = () => {
   };
 
   if (loading && isEditing) {
-    return <div className="p-4">Carregando dados...</div>;
+    return <div className="p-4 text-blue-600 font-medium">Carregando dados...</div>;
   }
 
   return (
     <div className="container mx-auto p-4 max-w-md">
       <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-6">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800">
           {isEditing ? 'Editar Administrador' : 'Novo Administrador'}
         </h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 font-medium">
+            ⚠️ {error}
           </div>
         )}
 
@@ -185,14 +186,14 @@ const FormAdministrador: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors font-semibold"
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/administradores')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors font-semibold"
             >
               Cancelar
             </button>

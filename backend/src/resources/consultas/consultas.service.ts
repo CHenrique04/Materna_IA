@@ -35,4 +35,10 @@ export class ConsultaService {
   async deletar(id: number): Promise<void> {
     await prisma.consulta.delete({ where: { id } });
   }
+  async listarTodas(): Promise<any[]> {
+    return await prisma.consulta.findMany({
+      include: { usuario: { select: { nome: true } } }, // Isso traz o nome da gestante!
+      orderBy: { dataHora: 'asc' }
+    });
+  }
 }

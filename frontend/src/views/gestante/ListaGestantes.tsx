@@ -1,4 +1,3 @@
-// frontend/src/views/ListaGestantes.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listarUsuarios, deletarUsuario } from '../../services/usuarios.api';
@@ -32,7 +31,6 @@ const ListaGestantes: React.FC = () => {
     if (window.confirm(`Tem certeza que deseja excluir a gestante "${nome}"?`)) {
       try {
         await deletarUsuario(id);
-        // Recarrega a lista após exclusão
         await carregarUsuarios();
       } catch (err) {
         console.error(err);
@@ -41,14 +39,12 @@ const ListaGestantes: React.FC = () => {
     }
   };
 
-  // Ajustei o loading para o tema claro
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="text-blue-600 font-medium animate-pulse text-lg">Carregando prontuários...</div>
     </div>
   );
   
-  // Ajustei o erro para o tema claro
   if (error) return (
     <div className="container mx-auto p-6 mt-6 bg-red-100 border border-red-400 rounded-lg text-center">
       <span className="text-red-700 font-medium">{error}</span>
@@ -56,14 +52,14 @@ const ListaGestantes: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 max-w-6xl">
       
       {/* Cabeçalho */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">👩‍👧 Gestantes Cadastradas</h1>
         <button
           onClick={() => navigate('/nova')}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition-colors"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition-colors font-semibold"
         >
           + Nova Gestante
         </button>
@@ -74,21 +70,11 @@ const ListaGestantes: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nome
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Telefone
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Data Nasc.
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cadastro
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Nasc.</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastro</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -101,16 +87,10 @@ const ListaGestantes: React.FC = () => {
             ) : (
               usuarios.map((usuario) => (
                 <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">
-                    {usuario.nome}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">{usuario.nome}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">{usuario.telefone}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                    {usuario.telefone}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                    {usuario.dataNascimento
-                      ? new Date(usuario.dataNascimento).toLocaleDateString()
-                      : '-'}
+                    {usuario.dataNascimento ? new Date(usuario.dataNascimento).toLocaleDateString() : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-600">
                     {new Date(usuario.createdAt).toLocaleDateString()}

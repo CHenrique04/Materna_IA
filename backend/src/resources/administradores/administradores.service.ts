@@ -35,24 +35,50 @@ export class AdministradorService {
     });
   }
 
-  async atualizar(id: number, data: UpdateAdministradorDTO) {
-    const updateData: any = {};
-    if (data.nome !== undefined) updateData.nome = data.nome;
-    if (data.email !== undefined) updateData.email = data.email;
-    if (data.cargo !== undefined) updateData.cargo = data.cargo;
-    if (data.municipio !== undefined) updateData.municipio = data.municipio;
-    if (data.senha) {
-      updateData.senhaHash = await bcrypt.hash(data.senha, saltRounds);
+  async atualizar(id: number, data: any) { // O tipo do 'data' depende de como você configurou
+    // 1. Busca o admin atual no banco para saber o cargo original dele
+    const adminAtual = await prisma.administrador.findUnique({ where: { id } });
+    if (!adminAtual) throw new Error('Administrador não encontrado');
+
+    // 2. Verifica se ele ERA Admin Geral e está tentando mudar para outra coisa
+    if (adminAtual.cargo === 'ADMIN_GERAL' && data.cargo && data.cargo !== 'ADMIN_GERAL') {
+      const totalAdminGeral = await prisma.administrador.count({
+        where: { cargo: 'ADMIN_GERAL' }
+      });
+      
+      // Se ele for o único Admin Geral no sistema, bloqueia o rebaixamento
+      if (totalAdminGeral <= 1) {
+        throw new Error('Ação bloqueada: Você não pode remover o cargo do único Administrador Geral do sistema.');
+      }
     }
 
+    // 3. Se houver senha nova no 'data', lembre-se de fazer o bcrypt.hash aqui antes de salvar!
+    // (Seu código original de update do Prisma entra aqui embaixo)
+    
     return await prisma.administrador.update({
       where: { id },
-      data: updateData,
-      select: { id: true, nome: true, email: true, cargo: true, municipio: true, ativo: true, createdAt: true, updatedAt: true }
+      data: data
     });
   }
 
-  async deletar(id: number) {
+ async deletar(id: number) {
+    // 1. Busca quem é o admin que está tentando ser apagado
+    const adminParaDeletar = await prisma.administrador.findUnique({ where: { id } });
+    if (!adminParaDeletar) throw new Error('Administrador não encontrado');
+
+    // 2. Se ele for um ADMIN_GERAL, faz a verificação
+    if (adminParaDeletar.cargo === 'ADMIN_GERAL') {
+      const totalAdminGeral = await prisma.administrador.count({
+        where: { cargo: 'ADMIN_GERAL' }
+      });
+      
+      // Se só tem 1 (ele mesmo), proíbe a exclusão
+      if (totalAdminGeral <= 1) {
+        throw new Error('Ação bloqueada: O sistema precisa ter pelo menos um Administrador Geral.');
+      }
+    }
+
+    // 3. Se passou pela trava, pode deletar
     await prisma.administrador.delete({ where: { id } });
   }
 }

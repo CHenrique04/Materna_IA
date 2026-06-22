@@ -4,6 +4,15 @@ import { ConsultaService } from './consultas.service';
 const service = new ConsultaService();
 
 export class ConsultaController {
+  async listarTodas(req: Request, res: Response) {
+    try {
+      const consultas = await service.listarTodas();
+      res.json(consultas);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao listar consultas' });
+    }
+  }
+  
   async listarPorUsuario(req: Request, res: Response) {
     try {
       const usuarioIdParam = req.params.usuarioId;
@@ -80,5 +89,6 @@ export class ConsultaController {
     } catch (error) {
       res.status(500).json({ error: 'Erro ao deletar consulta' });
     }
+    
   }
 }

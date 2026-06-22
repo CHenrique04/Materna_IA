@@ -25,8 +25,8 @@ const FormGestante: React.FC = () => {
           setFormData({
             nome: usuario.nome,
             telefone: usuario.telefone,
-            dataNascimento: usuario.dataNascimento || '',
-            dataUltimaMenstruacao: usuario.dataUltimaMenstruacao || '',
+            dataNascimento: usuario.dataNascimento ? usuario.dataNascimento.split('T')[0] : '',
+            dataUltimaMenstruacao: usuario.dataUltimaMenstruacao ? usuario.dataUltimaMenstruacao.split('T')[0] : '',
           });
         } catch (err) {
           console.error(err);
@@ -51,29 +51,41 @@ const FormGestante: React.FC = () => {
     if (!formData.nome.trim()) { setError('Nome é obrigatório'); return; }
     if (!formData.telefone.trim()) { setError('Telefone é obrigatório'); return; }
 
+    // PREPARAÇÃO DOS DADOS: Converte as datas para o padrão ISO exigido pelo banco
+    const payload = {
+      nome: formData.nome,
+      telefone: formData.telefone,
+      // Se o usuário preencheu a data, converte. Se deixou em branco, envia nulo para não quebrar o banco.
+      dataNascimento: formData.dataNascimento ? new Date(`${formData.dataNascimento}T12:00:00`).toISOString() : null,
+      dataUltimaMenstruacao: formData.dataUltimaMenstruacao ? new Date(`${formData.dataUltimaMenstruacao}T12:00:00`).toISOString() : null,
+    };
+
     try {
       setLoading(true);
       if (isEditing && id) {
-        await atualizarUsuario(Number(id), formData);
+        // Envia o payload formatado em vez do formData cru
+        await atualizarUsuario(Number(id), payload);
         alert('Gestante atualizada com sucesso!');
       } else {
-        await criarUsuario(formData);
+        // Envia o payload formatado em vez do formData cru
+        await criarUsuario(payload);
         alert('Gestante criada com sucesso!');
       }
       navigate('/gestantes');
     } catch (err: any) {
       console.error(err);
       if (err.response?.status === 409) {
-        setError('Telefone já cadastrado');
+        setError('Telefone já cadastrado no sistema');
       } else {
-        setError('Erro ao salvar gestante');
+        const mensagemErro = err.response?.data?.error || 'Erro ao salvar gestante';
+        setError(mensagemErro);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && isEditing) return <div className="p-4 text-center">Carregando dados...</div>;
+  if (loading && isEditing) return <div className="p-4 text-blue-600 font-medium text-center">Carregando dados...</div>;
 
   return (
     <div className="container mx-auto p-4 max-w-md">
@@ -83,8 +95,8 @@ const FormGestante: React.FC = () => {
         </h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 font-medium">
+            ⚠️ {error}
           </div>
         )}
 
@@ -96,7 +108,7 @@ const FormGestante: React.FC = () => {
               name="nome"
               value={formData.nome}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               placeholder="Ex: Maria da Silva"
               required
             />
@@ -109,7 +121,7 @@ const FormGestante: React.FC = () => {
               name="telefone"
               value={formData.telefone}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               placeholder="(11) 99999-1234"
               required
             />
@@ -122,7 +134,7 @@ const FormGestante: React.FC = () => {
               name="dataNascimento"
               value={formData.dataNascimento}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
 
@@ -133,7 +145,7 @@ const FormGestante: React.FC = () => {
               name="dataUltimaMenstruacao"
               value={formData.dataUltimaMenstruacao}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
 
@@ -141,14 +153,14 @@ const FormGestante: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors font-semibold"
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/gestantes')}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors font-semibold"
             >
               Cancelar
             </button>
