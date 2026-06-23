@@ -10,7 +10,7 @@ export default function Login() {
     e.preventDefault();
     try {
       const dados = await fazerLogin(email, senha);
-      localStorage.setItem('token', dados.token); 
+      sessionStorage.setItem('token', dados.token);
       window.location.href = '/'; 
     } catch (err) {
       setErro('E-mail ou senha inválidos.');

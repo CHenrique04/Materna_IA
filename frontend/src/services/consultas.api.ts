@@ -1,7 +1,4 @@
-// frontend/src/services/consultas.api.ts
-import axios from 'axios';
-
-const api = axios.create({ baseURL: 'http://localhost:3000/api' });
+import api from './api'; 
 
 export const listarTodasConsultas = async () => {
   const res = await api.get('/consultas');

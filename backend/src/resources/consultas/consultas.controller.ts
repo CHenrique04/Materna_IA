@@ -48,12 +48,15 @@ export class ConsultaController {
     }
   }
 
-  async criar(req: Request, res: Response) {
+ async criar(req: Request, res: Response) {
     try {
+      console.log("Recebendo dados para consulta:", req.body);
       const consulta = await service.criar(req.body);
       res.status(201).json(consulta);
-    } catch (error) {
-      res.status(500).json({ error: 'Erro ao criar consulta' });
+    } catch (error: any) {
+      console.error("ERRO DETALHADO NO BANCO:", error);
+      // Manda a mensagem exata do erro do Prisma para o Front!
+      res.status(500).json({ error: error.message || 'Erro interno ao criar consulta' });
     }
   }
 

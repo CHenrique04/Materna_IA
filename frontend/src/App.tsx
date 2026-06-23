@@ -20,7 +20,7 @@ import FormAdministrador from './views/administrador/FormAdministrador';
 function App() {
   // Estados para controle de acesso
   const [setupCheck, setSetupCheck] = useState<'carregando' | 'precisa_setup' | 'pronto'>('carregando');
-  const logado = !!localStorage.getItem('token'); // Verifica se o token existe no navegador
+  const logado = !!sessionStorage.getItem('token');
 
   // Quando o App abre, ele pergunta pro backend se o banco já tem um admin
   // Quando o App abre, ele pergunta pro backend se o banco já tem um admin
@@ -28,7 +28,7 @@ function App() {
     verificarSetup()
       .then((isComplete) => {
         if (!isComplete) {
-          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
           setSetupCheck('precisa_setup');
         } else {
           setSetupCheck('pronto');
@@ -101,7 +101,7 @@ function App() {
                 {/* Botão de Sair adicionado */}
                 <button 
                   onClick={() => { 
-                    localStorage.removeItem('token'); 
+                    sessionStorage.removeItem('token'); 
                     window.location.reload(); // Recarrega a página para acionar a Barreira de Login
                   }} 
                   className="text-red-500 hover:text-red-700 font-bold ml-4 px-3 py-1 bg-red-50 hover:bg-red-100 rounded transition-colors"

@@ -18,10 +18,12 @@ export default function CalendarioConsultas() {
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const [consultasData, gestantesData] = await Promise.all([
-        listarTodasConsultas(),
-        listarUsuarios()
-      ]);
+      
+      // Busca os dados de forma INDEPENDENTE com o .catch() de segurança!
+      // Assim, se as consultas derem erro por estarem vazias, as gestantes carregam normalmente.
+      const consultasData = await listarTodasConsultas().catch(() => []);
+      const gestantesData = await listarUsuarios().catch(() => []);
+      
       setConsultas(consultasData);
       setGestantes(gestantesData);
     } catch (error) {
@@ -53,8 +55,10 @@ export default function CalendarioConsultas() {
       // Limpa o formulário e recarrega a tela
       setUsuarioId(''); setData(''); setHora(''); setLocal('');
       carregarDados();
-    } catch (error) {
-      alert('Erro ao agendar consulta. Verifique os dados.');
+    } catch (error: any) {
+      // Agora o alerta vai mostrar exatamente o que deu errado!
+      const msg = error.response?.data?.error || 'Erro desconhecido. Olhe o terminal do backend.';
+      alert(`❌ Falha ao agendar: ${msg}`);
       console.error(error);
     }
   };

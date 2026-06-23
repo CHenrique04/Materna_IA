@@ -1,23 +1,23 @@
 import prisma from '../../utils/prisma';
-import { CreateExameDTO, UpdateExameDTO, ExameResponse } from './exames.types';
+import { CreateExameDTO, UpdateExameDTO } from './exames.types';
 
 export class ExameService {
-  async listarPorUsuario(usuarioId: number): Promise<ExameResponse[]> {
+  async listarPorUsuario(usuarioId: number) {
     return await prisma.exame.findMany({
       where: { usuarioId },
       orderBy: { dataExame: 'desc' }
     });
   }
 
-  async buscarPorId(id: number): Promise<ExameResponse | null> {
+  async buscarPorId(id: number) {
     return await prisma.exame.findUnique({ where: { id } });
   }
 
-  async criar(data: CreateExameDTO): Promise<ExameResponse> {
+  async criar(data: CreateExameDTO) {
     return await prisma.exame.create({ data });
   }
 
-  async atualizar(id: number, data: UpdateExameDTO): Promise<ExameResponse> {
+  async atualizar(id: number, data: UpdateExameDTO) {
     const dataToUpdate: any = {};
     if (data.tipo !== undefined) dataToUpdate.tipo = data.tipo;
     if (data.dataExame !== undefined) dataToUpdate.dataExame = data.dataExame;
@@ -31,7 +31,7 @@ export class ExameService {
     });
   }
 
-  async deletar(id: number): Promise<void> {
+  async deletar(id: number) {
     await prisma.exame.delete({ where: { id } });
   }
 }

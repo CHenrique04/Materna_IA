@@ -26,7 +26,8 @@ export class AdministradorService {
       data: {
         nome: data.nome,
         email: data.email,
-        cargo: data.cargo,
+        // O "as any" desliga o aviso de erro para o Enum do Prisma
+        cargo: data.cargo as any, 
         municipio: data.municipio,
         senhaHash,
         ativo: true,
