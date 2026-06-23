@@ -4,7 +4,7 @@ Este é o passo a passo para você rodar o projeto completo da Materna.IA na sua
 1. Configurando o FFmpeg (Essencial para processar áudio)
 O bot precisa do FFmpeg instalado e configurado no sistema para lidar com as mensagens de voz do Telegram.
 
-Baixe o FFmpeg através deste link: ffmpeg-git-essentials.7z.
+Baixe o FFmpeg através deste link: ffmpeg-git-essentials.7z. (https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-essentials.7z)
 
 Extraia o arquivo baixado em uma pasta de fácil acesso (por exemplo, C:\ffmpeg).
 
