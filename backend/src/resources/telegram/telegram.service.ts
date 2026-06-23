@@ -55,6 +55,13 @@ export class TelegramService {
       const telegramId = userId.toString();
       const text = ctx.message.text.trim();
       let state = this.userStates.get(userId);
+      const mensagem = ctx.message.text.trim().toLowerCase();
+      const despedidas = ['obrigado', 'obrigada', 'valeu', 'tchau', 'até logo', 'flw', 'só isso', 'era só isso'];
+
+      if (despedidas.some(palavra => mensagem.includes(palavra))) {
+        await ctx.reply('Por nada, mamãe! Fico feliz em ajudar. 😊');
+        return;
+      }
 
       // Proteção contra reinicialização do servidor (Recupera sessão)
       if (!state) {
