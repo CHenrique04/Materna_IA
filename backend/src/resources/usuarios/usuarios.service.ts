@@ -8,6 +8,11 @@ export class UsuarioService {
     });
     return usuarios;
   }
+  async buscarPorTelefone(telefone: string) {
+    return await prisma.usuario.findUnique({
+      where: { telefone: telefone }
+    });
+  }
 
   async buscarPorId(id: number) {
     const usuario = await prisma.usuario.findUnique({
@@ -26,12 +31,16 @@ export class UsuarioService {
       throw new Error('Telefone é obrigatório');
     }
 
+    // Convertemos as strings para objetos Date reais aqui
+    const dataNasc = data.dataNascimento ? new Date(data.dataNascimento) : null;
+    const dataUM = data.dataUltimaMenstruacao ? new Date(data.dataUltimaMenstruacao) : null;
+
     const usuario = await prisma.usuario.create({
       data: {
         nome: data.nome,
         telefone: data.telefone,
-        dataNascimento: data.dataNascimento ?? null,
-        dataUltimaMenstruacao: data.dataUltimaMenstruacao ?? null
+        dataNascimento: dataNasc, 
+        dataUltimaMenstruacao: dataUM
       }
     });
     return usuario;

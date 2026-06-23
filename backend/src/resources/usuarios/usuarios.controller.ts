@@ -90,6 +90,26 @@ export class UsuarioController {
         }
     }
     }
+    async buscarPorTelefone(req: Request, res: Response) {
+  try {
+    // Garantimos que pegamos o valor como string, mesmo que o TS ache que possa ser undefined
+    const telefone = req.params.telefone as string;
+
+    if (!telefone) {
+      return res.status(400).json({ error: 'Telefone é obrigatório' });
+    }
+
+    const usuario = await usuarioService.buscarPorTelefone(telefone);
+    
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar usuário' });
+  }
+}
 
     async listarMensagens(req: Request, res: Response) {
     try {

@@ -9,6 +9,7 @@ router.get('/:id', controller.buscarPorId);
 router.post('/', controller.criar);
 router.put('/:id', controller.atualizar);
 router.delete('/:id', controller.deletar);
-router.get('/:id/mensagens', controller.listarMensagens); // útil para o log
+router.get('/:id/mensagens', controller.listarMensagens);
+router.get('/telefone/:telefone', controller.buscarPorTelefone);
 
 export default router;
