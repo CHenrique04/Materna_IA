@@ -11,5 +11,6 @@ router.put('/:id', controller.atualizar);
 router.delete('/:id', controller.deletar);
 router.get('/:id/mensagens', controller.listarMensagens);
 router.get('/telefone/:telefone', controller.buscarPorTelefone);
+router.get('/telegram/:telegramId', controller.buscarPorTelegramId);
 
 export default router;

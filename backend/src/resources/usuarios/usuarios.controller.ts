@@ -13,6 +13,25 @@ export class UsuarioController {
       res.status(500).json({ error: 'Erro ao listar usuários' });
     }
   }
+  async buscarPorTelegramId(req: Request, res: Response) {
+    try {
+      // Forçamos o TypeScript a entender que é uma string
+      const telegramId = req.params.telegramId as string;
+
+      if (!telegramId) {
+        return res.status(400).json({ error: 'Telegram ID é obrigatório' });
+      }
+
+      const usuario = await usuarioService.buscarPorTelegramId(telegramId);
+      
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+      res.json(usuario);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar usuário pelo Telegram ID' });
+    }
+  }
 
     async buscarPorId(req: Request, res: Response) {
     try {

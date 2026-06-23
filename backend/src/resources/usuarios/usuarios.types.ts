@@ -1,5 +1,5 @@
-// src/resources/usuarios/usuarios.types.ts
 export interface CreateUsuarioDTO {
+  telegramId?: string; // Adicionado
   nome: string;
   telefone: string;
   dataNascimento?: string | null;
@@ -7,6 +7,7 @@ export interface CreateUsuarioDTO {
 }
 
 export interface UpdateUsuarioDTO {
+  telegramId?: string; // Adicionado
   nome?: string;
   telefone?: string;
   dataNascimento?: string | null;
@@ -15,6 +16,7 @@ export interface UpdateUsuarioDTO {
 
 export interface UsuarioResponse {
   id: number;
+  telegramId: string | null;
   nome: string;
   telefone: string;
   dataNascimento: string | null;

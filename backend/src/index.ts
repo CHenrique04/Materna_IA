@@ -9,23 +9,14 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+const telegramBot = new TelegramService(process.env.TELEGRAM_BOT_TOKEN!);
+telegramBot.start();
+
 app.use(cors());
 app.use(express.json());
 
-// Inicializa o bot do Telegram
-const telegramBot = new TelegramService(
-  process.env.TELEGRAM_BOT_TOKEN || "8823013374:AAEjoxRonsXKGDsSXMdx0JehinIwZhwPrbo",
-  process.env.GEMINI_API_KEY || "sua_chave",
-  `http://localhost:${port}`
-);
-telegramBot.start();
-
 app.get('/', (req, res) => {
   res.send('API do Chatbot Gestante funcionando!');
-});
-
-app.get('/status', (req, res) => {
-  res.json({ status: 'online' });
 });
 
 app.use('/api', router);
@@ -36,12 +27,6 @@ app.listen(port, () => {
 
 process.on('SIGINT', async () => {
   console.log('\n🛑 Encerrando...');
-  telegramBot.stop();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('\n🛑 Encerrando (SIGTERM)...');
   telegramBot.stop();
   process.exit(0);
 });

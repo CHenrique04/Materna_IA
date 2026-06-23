@@ -8,6 +8,7 @@ export class UsuarioService {
     });
     return usuarios;
   }
+  
   async buscarPorTelefone(telefone: string) {
     return await prisma.usuario.findUnique({
       where: { telefone: telefone }
@@ -26,17 +27,23 @@ export class UsuarioService {
     return usuario;
   }
   
+  async buscarPorTelegramId(telegramId: string) {
+    return await prisma.usuario.findUnique({
+      where: { telegramId: telegramId }
+    });
+  }
+  
   async criar(data: CreateUsuarioDTO) {
     if (!data.telefone) {
       throw new Error('Telefone é obrigatório');
     }
 
-    // Convertemos as strings para objetos Date reais aqui
     const dataNasc = data.dataNascimento ? new Date(data.dataNascimento) : null;
     const dataUM = data.dataUltimaMenstruacao ? new Date(data.dataUltimaMenstruacao) : null;
 
     const usuario = await prisma.usuario.create({
       data: {
+        telegramId: data.telegramId ?? null, // ADICIONADO AQUI
         nome: data.nome,
         telefone: data.telefone,
         dataNascimento: dataNasc, 
@@ -53,6 +60,7 @@ export class UsuarioService {
     }
 
     const dataToUpdate: any = {};
+    if (data.telegramId !== undefined) dataToUpdate.telegramId = data.telegramId; // ADICIONADO AQUI
     if (data.nome !== undefined) dataToUpdate.nome = data.nome;
     if (data.telefone !== undefined) dataToUpdate.telefone = data.telefone;
     if (data.dataNascimento !== undefined) dataToUpdate.dataNascimento = data.dataNascimento;
