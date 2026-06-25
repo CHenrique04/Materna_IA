@@ -45,11 +45,13 @@ model Administrador {
 
 model Usuario {
   id                    Int       @id @default(autoincrement())
-  telegramId            String?   @unique // NOVO: Guarda o ID do Telegram
+  telegramId            String?   @unique
   nome                  String
   telefone              String    @unique
   dataNascimento        DateTime? @db.Date 
-  dataUltimaMenstruacao DateTime? @db.Date 
+  semanasGestacao       Int?
+  numeroEmergencia      String?
+  historicoSaude        String?   @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

@@ -2,9 +2,19 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
+export interface ContextoUsuario {
+  semanasGestacao?: number | null;
+  historicoSaude?: string | null;
+}
+
+export interface MensagemHistorico {
+  direcao: 'entrada' | 'saida';
+  texto: string;
+}
+
 export class GroqService {
   private client: OpenAI;
-  private systemPrompt: string;
+  private baseSystemPrompt: string;
 
   constructor() {
     this.client = new OpenAI({
@@ -12,7 +22,7 @@ export class GroqService {
       apiKey: process.env.GROQ_API_KEY,
     });
 
-    this.systemPrompt = `
+    this.baseSystemPrompt = `
       Você é a "Materna.IA", uma assistente virtual especializada em maternidade.
       Seu público-alvo são mulheres grávidas ou que tiveram bebês recentemente (até 2 anos).
       
@@ -22,40 +32,52 @@ export class GroqService {
       - NUNCA dê diagnósticos médicos – sempre recomende consultar um profissional.
       - Responda APENAS perguntas sobre gestação, parto, pós-parto, amamentação, cuidados com o bebê, saúde mental materna, nutrição.
       
-      REGRAS DE COMPORTAMENTO:
+      REGRAS DE COMPORTAMENTO E TRIAGEM:
       1. Se o usuário fizer uma pergunta, responda de forma clara e direta, sem fazer perguntas adicionais no final.
-      2. Se o usuário agradecer (obrigado, valeu, etc.), responda apenas com algo como "Por nada, estou aqui para ajudar!" e PARE – NÃO faça perguntas extras.
-      3. Se o usuário se despedir (tchau, até logo, etc.), responda com uma despedida educada e PARE.
-      4. Se o usuário disser algo como "só isso", "era só isso", "finalizar", etc., entenda que a conversa terminou e NÃO faça perguntas adicionais.
-      5. NUNCA pergunte "Como posso ajudar você hoje?" ou "Você está grávida?" a menos que o usuário tenha feito uma pergunta vaga.
-      
-      Exemplo de resposta ao agradecimento:
-      "Por nada, mamãe! Fico feliz em ajudar. 😊"
-      
-      Exemplo de resposta a uma pergunta específica:
-      "As contrações de Braxton Hicks geralmente começam por volta das 20 semanas. Elas são irregulares e não indicam trabalho de parto. Se tiver dúvidas, converse com seu obstetra."
+      2. Se o usuário agradecer, responda apenas com algo como "Por nada, estou aqui para ajudar!" e PARE.
+      3. NUNCA pergunte "Como posso ajudar você hoje?" a menos que o usuário tenha feito uma pergunta vaga.
+      4. ALERTA DE EMERGÊNCIA: Se a usuária relatar sintomas de risco (ex: sangramento intenso, febre alta, perda de líquido, dor severa, ausência de movimentação fetal), acione o PROTOCOLO DE ALERTA. Oriente-a a buscar uma emergência obstétrica ou ligar para o seu contato de emergência IMEDIATAMENTE.
     `;
   }
 
-  async generateTextResponse(prompt: string, history?: string[]): Promise<string> {
+  private buildDynamicPrompt(contexto: ContextoUsuario): string {
+    let prompt = this.baseSystemPrompt;
+
+    prompt += `\n\n--- INFORMAÇÕES DA PACIENTE ---`;
+    prompt += `\nSemanas de gestação: ${contexto.semanasGestacao ? contexto.semanasGestacao : 'Não informado'}.`;
+    
+    const historico = contexto.historicoSaude?.toLowerCase().trim();
+    if (historico && historico !== 'não' && historico !== 'nao') {
+      prompt += `\nHistórico de Saúde: ${contexto.historicoSaude}`;
+      prompt += `\nATENÇÃO MÁXIMA: Leve este histórico em consideração ABSOLUTA ao responder qualquer sintoma ou dúvida para garantir a segurança da paciente.`;
+    } else {
+      prompt += `\nHistórico de Saúde: Sem complicações relatadas.`;
+    }
+
+    return prompt;
+  }
+
+  async generateTextResponse(prompt: string, contexto: ContextoUsuario, historico: MensagemHistorico[] = []): Promise<string> {
     try {
+      const dynamicSystemPrompt = this.buildDynamicPrompt(contexto);
+      
       const messages: ChatCompletionMessageParam[] = [
-        { role: 'system', content: this.systemPrompt }
+        { role: 'system', content: dynamicSystemPrompt }
       ];
 
-      if (history) {
-        for (let i = 0; i < history.length; i++) {
-          messages.push({
-            role: i % 2 === 0 ? 'user' : 'assistant',
-            content: history[i],
-          } as ChatCompletionMessageParam);
-        }
+      // Injeta as últimas mensagens no formato correto (alternando entre user e assistant)
+      for (const msg of historico) {
+        messages.push({
+          role: msg.direcao === 'entrada' ? 'user' : 'assistant',
+          content: msg.texto,
+        });
       }
 
+      // Adiciona a pergunta atual
       messages.push({
         role: 'user',
         content: prompt,
-      } as ChatCompletionMessageParam);
+      });
 
       const completion = await this.client.chat.completions.create({
         model: 'llama-3.3-70b-versatile',

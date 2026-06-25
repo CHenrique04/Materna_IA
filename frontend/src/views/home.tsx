@@ -129,18 +129,18 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Cartão de Alertas (Visual) */}
-        <div className="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200 flex flex-col">
-          <h2 className="text-xl font-bold text-orange-500 mb-3">⚠️ Monitor de Webhook</h2>
-          <p className="text-gray-500 mb-6 flex-grow leading-relaxed">
-            Painel de recebimento das mensagens descentralizadas do WhatsApp e motor de inferência.
+        {/* Cartão de Alertas / Telegram (Atualizado) */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
+          <h2 className="text-xl font-bold text-sky-500 mb-3">🤖 Monitor do Telegram</h2>
+          <p className="text-gray-600 mb-6 flex-grow leading-relaxed">
+            Acompanhe o fluxo de mensagens, transcrições de áudio e a triagem feita pela IA com as pacientes.
           </p>
-          <button 
-            disabled 
-            className="block w-full text-center bg-gray-300 text-gray-500 py-2.5 px-4 rounded-lg font-semibold cursor-not-allowed"
+          <Link 
+            to="/monitor-telegram" 
+            className="block text-center bg-sky-500 hover:bg-sky-600 text-white py-2.5 px-4 rounded-lg font-semibold transition-colors"
           >
-            Em Desenvolvimento
-          </button>
+            Acessar Monitor
+          </Link>
         </div>
 
       </div>

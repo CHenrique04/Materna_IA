@@ -3,13 +3,16 @@ import axios from 'axios';
 import { GroqService } from '../groq/groq.service';
 import { TranscricaoService } from '../transcricao/transcricao.service';
 import { TTSService } from '../tts/tts.service';
+import { UsuarioService } from '../usuarios/usuarios.service'; // Importação do service
 
 interface UserState {
-  step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_dum' | 'registered';
+  step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_semanas' | 'awaiting_emergencia' | 'awaiting_historico' | 'registered';
   nome?: string;
   telefone?: string;
   dataNascimento?: string;
-  dataUltimaMenstruacao?: string;
+  semanasGestacao?: number;
+  numeroEmergencia?: string;
+  historicoSaude?: string;
   usuarioId?: number;
 }
 
@@ -18,6 +21,7 @@ export class TelegramService {
   private groqService: GroqService;
   private transcricaoService: TranscricaoService;
   private ttsService: TTSService;
+  private usuarioService: UsuarioService; // Instância direta
   private userStates: Map<number, UserState> = new Map();
   private backendUrl: string;
 
@@ -26,6 +30,7 @@ export class TelegramService {
     this.groqService = new GroqService();
     this.transcricaoService = new TranscricaoService();
     this.ttsService = new TTSService();
+    this.usuarioService = new UsuarioService();
     this.backendUrl = backendUrl;
     this.initializeEvents();
   }
@@ -56,14 +61,13 @@ export class TelegramService {
       const text = ctx.message.text.trim();
       let state = this.userStates.get(userId);
       const mensagem = ctx.message.text.trim().toLowerCase();
+      
       const despedidas = ['obrigado', 'obrigada', 'valeu', 'tchau', 'até logo', 'flw', 'só isso', 'era só isso'];
-
       if (despedidas.some(palavra => mensagem.includes(palavra))) {
-        await ctx.reply('Por nada, mamãe! Fico feliz em ajudar. 😊');
+        await ctx.reply('Por nada, mamãe! Fico feliz em ajudar. Se precisar de algo, estarei aqui. 💕');
         return;
       }
 
-      // Proteção contra reinicialização do servidor (Recupera sessão)
       if (!state) {
         const usuarioExistente = await this.verificarUsuarioPorTelegramId(telegramId);
         if (usuarioExistente) {
@@ -77,7 +81,6 @@ export class TelegramService {
         }
       }
 
-      // Máquina de estados para cadastro
       switch (state.step) {
         case 'awaiting_name':
           state.nome = text;
@@ -102,16 +105,34 @@ export class TelegramService {
             return;
           }
           state.dataNascimento = this.convertDateToISO(text);
-          state.step = 'awaiting_dum';
-          await ctx.reply('Qual a data da sua última menstruação (DUM)? (DD/MM/AAAA)');
+          state.step = 'awaiting_semanas';
+          await ctx.reply('Com quantas semanas de gestação você está? (Digite apenas o número, ex: 12)');
           break;
 
-        case 'awaiting_dum':
-          if (!this.isValidDate(text)) {
-            await ctx.reply('Data inválida. Use o formato DD/MM/AAAA');
+        case 'awaiting_semanas':
+          const semanas = parseInt(text);
+          if (isNaN(semanas) || semanas < 0 || semanas > 42) {
+            await ctx.reply('Valor inválido. Por favor, digite apenas o número de semanas (ex: 12).');
             return;
           }
-          state.dataUltimaMenstruacao = this.convertDateToISO(text);
+          state.semanasGestacao = semanas;
+          state.step = 'awaiting_emergencia';
+          await ctx.reply('Qual é o número de telefone de alguém de sua confiança para emergências? (Apenas números com DDD)');
+          break;
+
+        case 'awaiting_emergencia':
+          const telEmergenciaLimpo = text.replace(/\D/g, '');
+          if (telEmergenciaLimpo.length < 10 || telEmergenciaLimpo.length > 11) {
+            await ctx.reply('Número inválido. Digite apenas números, com DDD.');
+            return;
+          }
+          state.numeroEmergencia = telEmergenciaLimpo;
+          state.step = 'awaiting_historico';
+          await ctx.reply('Você possui algum problema de saúde ou complicação na gravidez (ex: diabetes, pressão alta)? Se não, digite "Não".');
+          break;
+
+        case 'awaiting_historico':
+          state.historicoSaude = text;
           
           try {
             const novoUsuario = await this.criarUsuario({
@@ -119,7 +140,9 @@ export class TelegramService {
               nome: state.nome!,
               telefone: state.telefone!,
               dataNascimento: state.dataNascimento,
-              dataUltimaMenstruacao: state.dataUltimaMenstruacao
+              semanasGestacao: state.semanasGestacao,
+              numeroEmergencia: state.numeroEmergencia,
+              historicoSaude: state.historicoSaude
             });
             state.step = 'registered';
             state.usuarioId = novoUsuario.id;
@@ -134,7 +157,32 @@ export class TelegramService {
         case 'registered':
           try {
             await ctx.sendChatAction('typing');
-            const resposta = await this.groqService.generateTextResponse(text, []);
+            
+            const usuarioId = state.usuarioId!;
+
+            // 1. Prepara o contexto de saúde para injetar no Prompt da IA
+            const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
+            const contexto = {
+              semanasGestacao: usuarioDados?.semanasGestacao ?? null,
+              historicoSaude: usuarioDados?.historicoSaude ?? null
+            };
+
+            // 2. Salva a mensagem da usuária
+            await this.usuarioService.salvarMensagem(usuarioId, text, 'entrada');
+
+            // 3. Busca o histórico e formata para a interface do Groq
+            const ultimasMensagens = await this.usuarioService.buscarUltimasMensagens(usuarioId, 10);
+            const historicoFormatado = ultimasMensagens.map(m => ({
+              direcao: m.direcao as 'entrada' | 'saida',
+              texto: m.texto
+            }));
+
+            // 4. Passa tudo de uma vez para a IA
+            const resposta = await this.groqService.generateTextResponse(text, contexto, historicoFormatado);
+
+            // 5. Salva a resposta gerada
+            await this.usuarioService.salvarMensagem(usuarioId, resposta, 'saida');
+
             await ctx.reply(resposta);
           } catch (error) {
             console.error('Erro no Groq:', error);
@@ -170,9 +218,33 @@ export class TelegramService {
         const fileLink = await ctx.telegram.getFileLink(ctx.message.voice.file_id);
         const textoTranscrito = await this.transcricaoService.transcreverAudio(fileLink.toString());
         
-        const respostaIA = await this.groqService.generateTextResponse(textoTranscrito, []);
-        const audioBuffer = await this.ttsService.textoParaAudio(respostaIA);
+        const usuarioId = state.usuarioId!;
 
+        // 1. Contexto de Saúde
+        const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
+        const contexto = {
+          semanasGestacao: usuarioDados?.semanasGestacao ?? null,
+          historicoSaude: usuarioDados?.historicoSaude ?? null
+        };
+
+        // 2. Salva o áudio transcrito como mensagem da usuária
+        await this.usuarioService.salvarMensagem(usuarioId, textoTranscrito, 'entrada');
+
+        // 3. Busca o histórico
+        const ultimasMensagens = await this.usuarioService.buscarUltimasMensagens(usuarioId, 10);
+        const historicoFormatado = ultimasMensagens.map(m => ({
+          direcao: m.direcao as 'entrada' | 'saida',
+          texto: m.texto
+        }));
+
+        // 4. Gera a resposta da IA
+        const respostaIA = await this.groqService.generateTextResponse(textoTranscrito, contexto, historicoFormatado);
+        
+        // 5. Salva a resposta da IA
+        await this.usuarioService.salvarMensagem(usuarioId, respostaIA, 'saida');
+
+        // 6. Converte para voz e envia
+        const audioBuffer = await this.ttsService.textoParaAudio(respostaIA);
         await ctx.replyWithVoice({ source: audioBuffer });
         await ctx.reply(`📝 *Você disse:*\n"${textoTranscrito}"`, { parse_mode: 'Markdown' });
 
@@ -218,7 +290,7 @@ export class TelegramService {
 
   public start() {
     this.bot.launch();
-    console.log('✅ Bot do Telegram pronto com fluxo de cadastro!');
+    console.log('✅ Bot do Telegram pronto com fluxo de cadastro e memória ativada!');
   }
 
   public stop() {
