@@ -47,6 +47,7 @@ export class UsuarioService {
         telefone: data.telefone,
         dataNascimento: dataNasc, 
         semanasGestacao: data.semanasGestacao ?? null,
+        nomeEmergencia: data.nomeEmergencia ?? null, // Adicionado
         numeroEmergencia: data.numeroEmergencia ?? null,
         historicoSaude: data.historicoSaude ?? null
       }
@@ -71,6 +72,7 @@ export class UsuarioService {
     if (data.semanasGestacao !== undefined) dataToUpdate.semanasGestacao = data.semanasGestacao;
     if (data.numeroEmergencia !== undefined) dataToUpdate.numeroEmergencia = data.numeroEmergencia;
     if (data.historicoSaude !== undefined) dataToUpdate.historicoSaude = data.historicoSaude;
+    if (data.nomeEmergencia !== undefined) dataToUpdate.nomeEmergencia = data.nomeEmergencia;
 
     const usuarioAtualizado = await prisma.usuario.update({
       where: { id },

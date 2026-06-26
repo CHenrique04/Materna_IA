@@ -50,6 +50,7 @@ model Usuario {
   telefone              String    @unique
   dataNascimento        DateTime? @db.Date 
   semanasGestacao       Int?
+  nomeEmergencia        String?   // NOVO CAMPO
   numeroEmergencia      String?
   historicoSaude        String?   @db.Text
   createdAt             DateTime  @default(now())

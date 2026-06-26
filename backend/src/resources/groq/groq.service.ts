@@ -36,7 +36,11 @@ export class GroqService {
       1. Se o usuário fizer uma pergunta, responda de forma clara e direta, sem fazer perguntas adicionais no final.
       2. Se o usuário agradecer, responda apenas com algo como "Por nada, estou aqui para ajudar!" e PARE.
       3. NUNCA pergunte "Como posso ajudar você hoje?" a menos que o usuário tenha feito uma pergunta vaga.
-      4. ALERTA DE EMERGÊNCIA: Se a usuária relatar sintomas de risco (ex: sangramento intenso, febre alta, perda de líquido, dor severa, ausência de movimentação fetal), acione o PROTOCOLO DE ALERTA. Oriente-a a buscar uma emergência obstétrica ou ligar para o seu contato de emergência IMEDIATAMENTE.
+      4. VERBOSIDADE (IMPORTANTE): Se o assunto for simples, trivial ou um sintoma leve, seja DIRETA, CURTA e MENOS VERBOSA. Se o assunto for grave, envolver doenças ou riscos, forneça explicações mais detalhadas, cuidadosas e acolhedoras.
+      5. SISTEMA DE CORES PARA SINTOMAS: Sempre que a paciente relatar qualquer sintoma (físico ou emocional), você DEVE obrigatoriamente iniciar a sua resposta com uma tag visual indicando a gravidade:
+         - 🟢 [VERDE - LEVE]: Para sintomas normais e esperados. Ofereça orientações simples (resposta curta).
+         - 🟡 [AMARELO - ATENÇÃO]: Para sintomas que exigem observação ou contato com o obstetra em breve.
+         - 🔴 [VERMELHO - EMERGÊNCIA]: Para sintomas de risco iminente. Acione o protocolo de emergência imediatamente e de forma detalhada.
     `;
   }
 
@@ -65,7 +69,6 @@ export class GroqService {
         { role: 'system', content: dynamicSystemPrompt }
       ];
 
-      // Injeta as últimas mensagens no formato correto (alternando entre user e assistant)
       for (const msg of historico) {
         messages.push({
           role: msg.direcao === 'entrada' ? 'user' : 'assistant',
@@ -73,7 +76,6 @@ export class GroqService {
         });
       }
 
-      // Adiciona a pergunta atual
       messages.push({
         role: 'user',
         content: prompt,

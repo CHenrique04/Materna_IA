@@ -6,11 +6,12 @@ import { TTSService } from '../tts/tts.service';
 import { UsuarioService } from '../usuarios/usuarios.service'; // Importação do service
 
 interface UserState {
-  step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_semanas' | 'awaiting_emergencia' | 'awaiting_historico' | 'registered';
+  step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_semanas' | 'awaiting_nome_emergencia' | 'awaiting_emergencia' | 'awaiting_historico' | 'registered';
   nome?: string;
   telefone?: string;
   dataNascimento?: string;
   semanasGestacao?: number;
+  nomeEmergencia?: string; // Novo estado
   numeroEmergencia?: string;
   historicoSaude?: string;
   usuarioId?: number;
@@ -116,8 +117,14 @@ export class TelegramService {
             return;
           }
           state.semanasGestacao = semanas;
-          state.step = 'awaiting_emergencia';
+          state.step = 'awaiting_nome_emergencia';
           await ctx.reply('Qual é o número de telefone de alguém de sua confiança para emergências? (Apenas números com DDD)');
+          break;
+        
+        case 'awaiting_nome_emergencia': // Novo Case
+          state.nomeEmergencia = text;
+          state.step = 'awaiting_emergencia';
+          await ctx.reply(`Ótimo! E qual é o número de telefone de ${state.nomeEmergencia} com DDD? (Apenas números)`);
           break;
 
         case 'awaiting_emergencia':
@@ -141,6 +148,7 @@ export class TelegramService {
               telefone: state.telefone!,
               dataNascimento: state.dataNascimento,
               semanasGestacao: state.semanasGestacao,
+              nomeEmergencia: state.nomeEmergencia,
               numeroEmergencia: state.numeroEmergencia,
               historicoSaude: state.historicoSaude
             });
@@ -247,6 +255,11 @@ export class TelegramService {
         const audioBuffer = await this.ttsService.textoParaAudio(respostaIA);
         await ctx.replyWithVoice({ source: audioBuffer });
         await ctx.reply(`📝 *Você disse:*\n"${textoTranscrito}"`, { parse_mode: 'Markdown' });
+
+        // NOVO: Se a triagem for vermelha, envia a resposta em texto como reforço
+        if (respostaIA.includes('🔴')) {
+          await ctx.reply(`⚠️ *ALERTA RECEBIDO NO ÁUDIO:*\n\n${respostaIA}`, { parse_mode: 'Markdown' });
+        }
 
       } catch (error) {
         console.error('Erro ao processar áudio:', error);

@@ -4,6 +4,7 @@ export interface CreateUsuarioDTO {
   telefone: string;
   dataNascimento?: string | null;
   semanasGestacao?: number | null;
+  nomeEmergencia?: string | null; // Adicionado
   numeroEmergencia?: string | null;
   historicoSaude?: string | null;
 }
@@ -14,6 +15,7 @@ export interface UpdateUsuarioDTO {
   telefone?: string;
   dataNascimento?: string | null;
   semanasGestacao?: number | null;
+  nomeEmergencia?: string | null; // Adicionado
   numeroEmergencia?: string | null;
   historicoSaude?: string | null;
 }
@@ -25,6 +27,7 @@ export interface UsuarioResponse {
   telefone: string;
   dataNascimento: string | null;
   semanasGestacao: number | null;
+  nomeEmergencia: string | null; // Adicionado
   numeroEmergencia: string | null;
   historicoSaude: string | null;
   createdAt: Date;
