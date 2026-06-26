@@ -3,7 +3,7 @@ import axios from 'axios';
 import { GroqService } from '../groq/groq.service';
 import { TranscricaoService } from '../transcricao/transcricao.service';
 import { TTSService } from '../tts/tts.service';
-import { UsuarioService } from '../usuarios/usuarios.service'; // Importação do service
+import { UsuarioService } from '../usuarios/usuarios.service';
 
 interface UserState {
   step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_semanas' | 'awaiting_nome_emergencia' | 'awaiting_emergencia' | 'awaiting_historico' | 'registered';
@@ -11,7 +11,7 @@ interface UserState {
   telefone?: string;
   dataNascimento?: string;
   semanasGestacao?: number;
-  nomeEmergencia?: string; // Novo estado
+  nomeEmergencia?: string; 
   numeroEmergencia?: string;
   historicoSaude?: string;
   usuarioId?: number;
@@ -22,7 +22,7 @@ export class TelegramService {
   private groqService: GroqService;
   private transcricaoService: TranscricaoService;
   private ttsService: TTSService;
-  private usuarioService: UsuarioService; // Instância direta
+  private usuarioService: UsuarioService;
   private userStates: Map<number, UserState> = new Map();
   private backendUrl: string;
 
@@ -118,12 +118,14 @@ export class TelegramService {
           }
           state.semanasGestacao = semanas;
           state.step = 'awaiting_nome_emergencia';
-          await ctx.reply('Qual é o número de telefone de alguém de sua confiança para emergências? (Apenas números com DDD)');
+          // CORREÇÃO: Primeiro perguntamos o nome da pessoa
+          await ctx.reply('Qual é o nome de uma pessoa de sua confiança para contato em caso de emergência?');
           break;
         
-        case 'awaiting_nome_emergencia': // Novo Case
+        case 'awaiting_nome_emergencia':
           state.nomeEmergencia = text;
           state.step = 'awaiting_emergencia';
+          // CORREÇÃO: Usamos o nome capturado para pedir o número de forma personalizada
           await ctx.reply(`Ótimo! E qual é o número de telefone de ${state.nomeEmergencia} com DDD? (Apenas números)`);
           break;
 
@@ -256,7 +258,7 @@ export class TelegramService {
         await ctx.replyWithVoice({ source: audioBuffer });
         await ctx.reply(`📝 *Você disse:*\n"${textoTranscrito}"`, { parse_mode: 'Markdown' });
 
-        // NOVO: Se a triagem for vermelha, envia a resposta em texto como reforço
+        // Se a triagem for vermelha, envia a resposta em texto como reforço
         if (respostaIA.includes('🔴')) {
           await ctx.reply(`⚠️ *ALERTA RECEBIDO NO ÁUDIO:*\n\n${respostaIA}`, { parse_mode: 'Markdown' });
         }
