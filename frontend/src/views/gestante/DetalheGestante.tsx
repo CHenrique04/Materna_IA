@@ -102,7 +102,7 @@ const DetalheGestante: React.FC = () => {
                     </div>
                     {exame.arquivoUrl && (
                       <a 
-                        href={`http://localhost:3000${exame.arquivoUrl}`} 
+                        href={`${exame.arquivoUrl}`} 
                         target="_blank" 
                         rel="noreferrer" 
                         className="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold text-sm hover:bg-blue-200 transition"
