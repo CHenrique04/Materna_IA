@@ -4,6 +4,8 @@ import { GroqService } from '../groq/groq.service';
 import { TranscricaoService } from '../transcricao/transcricao.service';
 import { TTSService } from '../tts/tts.service';
 import { UsuarioService } from '../usuarios/usuarios.service';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface UserState {
   step: 'awaiting_name' | 'awaiting_phone' | 'awaiting_birthdate' | 'awaiting_semanas' | 'awaiting_nome_emergencia' | 'awaiting_emergencia' | 'awaiting_historico' | 'registered';
@@ -37,9 +39,6 @@ export class TelegramService {
   }
 
   private initializeEvents() {
-    // ----------------------------------------------------
-    // COMANDO /START
-    // ----------------------------------------------------
     this.bot.start(async (ctx) => {
       const telegramId = ctx.from.id.toString();
       const usuarioExistente = await this.verificarUsuarioPorTelegramId(telegramId);
@@ -53,6 +52,93 @@ export class TelegramService {
       }
     });
 
+   // ----------------------------------------------------
+// TRATAMENTO DE IMAGENS E DOCUMENTOS (EXAMES) - ATUALIZADO
+// ----------------------------------------------------
+this.bot.on(['photo', 'document'], async (ctx) => {
+  const userId = ctx.from.id;
+  let state = this.userStates.get(userId);
+
+  if (!state || state.step !== 'registered') {
+    await ctx.reply('Por favor, complete seu cadastro antes de enviar exames. Digite /start.');
+    return;
+  }
+
+  if (!ctx.message) return;
+
+  try {
+    await ctx.sendChatAction('typing');
+    const usuarioId = state.usuarioId!;
+    
+    const msg = ctx.message as any;
+    let fileId: string | null = null;
+    let fileType: 'photo' | 'document' = 'document';
+    let fileName = '';
+
+    // --- Identifica o tipo e obtém o fileId ---
+    if (msg.photo && msg.photo.length > 0) {
+      fileId = msg.photo[msg.photo.length - 1].file_id;
+      fileType = 'photo';
+      fileName = `foto_${Date.now()}.jpg`;
+    } else if (msg.document) {
+      fileId = msg.document.file_id;
+      fileType = 'document';
+      // Tenta usar o nome original do documento
+      fileName = msg.document.file_name || `documento_${Date.now()}.pdf`;
+      // Se a extensão for .circ, substitui por .pdf (ou mantém)
+      if (fileName.endsWith('.circ')) {
+        fileName = fileName.replace(/\.circ$/, '.pdf');
+      }
+    }
+
+    if (!fileId) {
+      await ctx.reply('Formato de arquivo não reconhecido.');
+      return;
+    }
+
+    // --- Obtém o link do arquivo no Telegram ---
+    const fileLink = await ctx.telegram.getFileLink(fileId);
+
+    // --- Baixa o arquivo e salva localmente ---
+    const uploadDir = path.join(__dirname, '../../uploads/exames');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const localFilePath = path.join(uploadDir, fileName);
+    const writer = fs.createWriteStream(localFilePath);
+
+    const response = await axios({
+      method: 'GET',
+      url: fileLink.toString(),
+      responseType: 'stream',
+    });
+
+    response.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
+
+    // --- Salva no banco de dados (caminho local) ---
+    const caminhoRelativo = `http://localhost:3000/uploads/exames/${fileName}`;
+    await this.usuarioService.salvarExame(
+      usuarioId,
+      fileType === 'photo' ? 'Imagem' : 'Documento',
+      caminhoRelativo 
+    );
+
+    await ctx.reply(
+      `✅ ${fileType === 'photo' ? 'Imagem' : 'Documento'} recebido e salvo com sucesso! 📁\n` +
+      `Nome: ${fileName}\n` +
+      `Seu médico já pode visualizá-lo no sistema.`
+    );
+  } catch (error) {
+    console.error('Erro ao salvar arquivo:', error);
+    await ctx.reply('❌ Tive um problema para salvar seu exame. Tente novamente mais tarde.');
+  }
+});
     // ----------------------------------------------------
     // MENSAGENS DE TEXTO
     // ----------------------------------------------------
@@ -88,7 +174,6 @@ export class TelegramService {
           state.step = 'awaiting_phone';
           await ctx.reply('Ótimo! Agora, qual é o seu número de telefone com DDD? (Apenas números, ex: 11999999999)');
           break;
-
         case 'awaiting_phone':
           const telLimpo = text.replace(/\D/g, '');
           if (telLimpo.length < 10 || telLimpo.length > 11) {
@@ -99,7 +184,6 @@ export class TelegramService {
           state.step = 'awaiting_birthdate';
           await ctx.reply('Qual a sua data de nascimento? (DD/MM/AAAA)');
           break;
-
         case 'awaiting_birthdate':
           if (!this.isValidDate(text)) {
             await ctx.reply('Data inválida. Use o formato DD/MM/AAAA');
@@ -109,7 +193,6 @@ export class TelegramService {
           state.step = 'awaiting_semanas';
           await ctx.reply('Com quantas semanas de gestação você está? (Digite apenas o número, ex: 12)');
           break;
-
         case 'awaiting_semanas':
           const semanas = parseInt(text);
           if (isNaN(semanas) || semanas < 0 || semanas > 42) {
@@ -118,17 +201,13 @@ export class TelegramService {
           }
           state.semanasGestacao = semanas;
           state.step = 'awaiting_nome_emergencia';
-          // CORREÇÃO: Primeiro perguntamos o nome da pessoa
           await ctx.reply('Qual é o nome de uma pessoa de sua confiança para contato em caso de emergência?');
           break;
-        
         case 'awaiting_nome_emergencia':
           state.nomeEmergencia = text;
           state.step = 'awaiting_emergencia';
-          // CORREÇÃO: Usamos o nome capturado para pedir o número de forma personalizada
           await ctx.reply(`Ótimo! E qual é o número de telefone de ${state.nomeEmergencia} com DDD? (Apenas números)`);
           break;
-
         case 'awaiting_emergencia':
           const telEmergenciaLimpo = text.replace(/\D/g, '');
           if (telEmergenciaLimpo.length < 10 || telEmergenciaLimpo.length > 11) {
@@ -139,10 +218,8 @@ export class TelegramService {
           state.step = 'awaiting_historico';
           await ctx.reply('Você possui algum problema de saúde ou complicação na gravidez (ex: diabetes, pressão alta)? Se não, digite "Não".');
           break;
-
         case 'awaiting_historico':
           state.historicoSaude = text;
-          
           try {
             const novoUsuario = await this.criarUsuario({
               telegramId: telegramId,
@@ -167,33 +244,39 @@ export class TelegramService {
         case 'registered':
           try {
             await ctx.sendChatAction('typing');
-            
             const usuarioId = state.usuarioId!;
 
-            // 1. Prepara o contexto de saúde para injetar no Prompt da IA
             const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
             const contexto = {
               semanasGestacao: usuarioDados?.semanasGestacao ?? null,
               historicoSaude: usuarioDados?.historicoSaude ?? null
             };
 
-            // 2. Salva a mensagem da usuária
             await this.usuarioService.salvarMensagem(usuarioId, text, 'entrada');
 
-            // 3. Busca o histórico e formata para a interface do Groq
             const ultimasMensagens = await this.usuarioService.buscarUltimasMensagens(usuarioId, 10);
             const historicoFormatado = ultimasMensagens.map(m => ({
               direcao: m.direcao as 'entrada' | 'saida',
               texto: m.texto
             }));
 
-            // 4. Passa tudo de uma vez para a IA
-            const resposta = await this.groqService.generateTextResponse(text, contexto, historicoFormatado);
+            // Agora o Groq devolve um JSON parseado!
+            const iaResponse = await this.groqService.generateTextResponse(text, contexto, historicoFormatado);
 
-            // 5. Salva a resposta gerada
-            await this.usuarioService.salvarMensagem(usuarioId, resposta, 'saida');
+            // Salva a resposta da IA junto com o sentimento detectado
+            await this.usuarioService.salvarMensagem(usuarioId, iaResponse.resposta, 'saida', iaResponse.sentimento || undefined);
 
-            await ctx.reply(resposta);
+            // Se a IA gerou um alerta vermelho, salva no banco
+            if (iaResponse.resumoAlerta) {
+              await this.usuarioService.salvarAlerta(usuarioId, iaResponse.resumoAlerta);
+            }
+
+            // Se a IA destacou um tópico para a consulta, salva no banco
+            if (iaResponse.topicoConsulta) {
+              await this.usuarioService.salvarTopico(usuarioId, iaResponse.topicoConsulta);
+            }
+
+            await ctx.reply(iaResponse.resposta);
           } catch (error) {
             console.error('Erro no Groq:', error);
             await ctx.reply('❌ Desculpe, ocorreu um erro ao processar sua mensagem.');
@@ -229,40 +312,35 @@ export class TelegramService {
         const textoTranscrito = await this.transcricaoService.transcreverAudio(fileLink.toString());
         
         const usuarioId = state.usuarioId!;
-
-        // 1. Contexto de Saúde
         const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
         const contexto = {
           semanasGestacao: usuarioDados?.semanasGestacao ?? null,
           historicoSaude: usuarioDados?.historicoSaude ?? null
         };
 
-        // 2. Salva o áudio transcrito como mensagem da usuária
         await this.usuarioService.salvarMensagem(usuarioId, textoTranscrito, 'entrada');
 
-        // 3. Busca o histórico
         const ultimasMensagens = await this.usuarioService.buscarUltimasMensagens(usuarioId, 10);
         const historicoFormatado = ultimasMensagens.map(m => ({
           direcao: m.direcao as 'entrada' | 'saida',
           texto: m.texto
         }));
 
-        // 4. Gera a resposta da IA
-        const respostaIA = await this.groqService.generateTextResponse(textoTranscrito, contexto, historicoFormatado);
+        const iaResponse = await this.groqService.generateTextResponse(textoTranscrito, contexto, historicoFormatado);
         
-        // 5. Salva a resposta da IA
-        await this.usuarioService.salvarMensagem(usuarioId, respostaIA, 'saida');
+        // Salvamentos das Inovações
+        await this.usuarioService.salvarMensagem(usuarioId, iaResponse.resposta, 'saida', iaResponse.sentimento || undefined);
+        if (iaResponse.resumoAlerta) await this.usuarioService.salvarAlerta(usuarioId, iaResponse.resumoAlerta);
+        if (iaResponse.topicoConsulta) await this.usuarioService.salvarTopico(usuarioId, iaResponse.topicoConsulta);
 
-        // 6. Converte para voz e envia
-        const audioBuffer = await this.ttsService.textoParaAudio(respostaIA);
+        // Áudio e texto de apoio
+        const audioBuffer = await this.ttsService.textoParaAudio(iaResponse.resposta);
         await ctx.replyWithVoice({ source: audioBuffer });
         await ctx.reply(`📝 *Você disse:*\n"${textoTranscrito}"`, { parse_mode: 'Markdown' });
 
-        // Se a triagem for vermelha, envia a resposta em texto como reforço
-        if (respostaIA.includes('🔴')) {
-          await ctx.reply(`⚠️ *ALERTA RECEBIDO NO ÁUDIO:*\n\n${respostaIA}`, { parse_mode: 'Markdown' });
+        if (iaResponse.resumoAlerta) {
+          await ctx.reply(`⚠️ *ALERTA RECEBIDO NO ÁUDIO:*\n\n${iaResponse.resposta}`, { parse_mode: 'Markdown' });
         }
-
       } catch (error) {
         console.error('Erro ao processar áudio:', error);
         await ctx.reply('❌ Não consegui processar seu áudio. Tente novamente.');
@@ -289,11 +367,9 @@ export class TelegramService {
     const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const match = str.match(regex);
     if (!match) return false;
-    
     const day = match[1]!;
     const month = match[2]!;
     const year = match[3]!;
-    
     const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     return d.getFullYear() === parseInt(year) && d.getMonth() === parseInt(month) - 1 && d.getDate() === parseInt(day);
   }
@@ -305,7 +381,7 @@ export class TelegramService {
 
   public start() {
     this.bot.launch();
-    console.log('✅ Bot do Telegram pronto com fluxo de cadastro e memória ativada!');
+    console.log('✅ Bot do Telegram pronto com suporte a Exames, Alertas e JSON!');
   }
 
   public stop() {

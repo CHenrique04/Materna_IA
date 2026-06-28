@@ -1,41 +1,26 @@
 // frontend/src/views/gestante/DetalheGestante.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { buscarUsuario, listarMensagens } from '../../services/usuarios.api';
-import type { Usuario, Mensagem } from '../../types/Usuario';
+import { buscarUsuario } from '../../services/usuarios.api';
 
 const DetalheGestante: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [usuario, setUsuario] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [abaAtiva, setAbaAtiva] = useState<'conversas' | 'exames' | 'consultas'>('conversas');
-
-  // Dados simulados de exames para a apresentação do Ciclo 1
-  const [exames] = useState([
-    { id: 1, tipo: 'Ultrassom Obstétrico', data: '2026-05-10', resultado: 'Normal', anexo: true },
-    { id: 2, tipo: 'Glicemia de Jejum', data: '2026-05-20', resultado: '95 mg/dL', anexo: false },
-    { id: 3, tipo: 'Hemograma Completo', data: '2026-06-05', resultado: 'Anemia Leve', anexo: true },
-  ]);
+  const [abaAtiva, setAbaAtiva] = useState<'conversas' | 'exames' | 'topicos' | 'consultas'>('conversas');
 
   useEffect(() => {
     const carregarDados = async () => {
       if (!id) return;
       try {
         setLoading(true);
-        const [usuarioData, mensagensData] = await Promise.all([
-          buscarUsuario(Number(id)),
-          listarMensagens(Number(id)),
-        ]);
+        // Agora o backend traz exames e topicos aninhados dentro do usuário
+        const usuarioData = await buscarUsuario(Number(id));
         setUsuario(usuarioData);
-        setMensagens(mensagensData);
-        setError(null);
       } catch (err) {
-        console.error(err);
         setError('Erro ao carregar dados da gestante');
       } finally {
         setLoading(false);
@@ -44,154 +29,116 @@ const DetalheGestante: React.FC = () => {
     carregarDados();
   }, [id]);
 
-  if (loading) return <div className="p-4 text-center text-blue-600 font-medium">Carregando dados da paciente...</div>;
-  if (error) return <div className="p-4 text-center text-red-600 font-medium">{error}</div>;
-  if (!usuario) return <div className="p-4 text-center text-gray-500">Gestante não encontrada</div>;
+  if (loading) return <div className="p-4 text-center">Carregando dados...</div>;
+  if (error || !usuario) return <div className="p-4 text-center text-red-600">{error || 'Não encontrada'}</div>;
 
-  const getTabClass = (aba: string) => {
-    return abaAtiva === aba
-      ? "border-b-2 border-blue-600 text-blue-600 px-6 py-3 text-sm font-medium focus:outline-none bg-white"
-      : "px-6 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 focus:outline-none transition-colors";
-  };
+  const getTabClass = (aba: string) => abaAtiva === aba
+      ? "border-b-2 border-blue-600 text-blue-600 px-6 py-3 font-bold bg-white"
+      : "px-6 py-3 font-medium text-gray-600 hover:bg-gray-50";
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      {/* Botão voltar */}
-      <div className="mb-4">
-        <button
-          onClick={() => navigate('/gestantes')}
-          className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors font-semibold shadow-sm"
-        >
-          ← Voltar
-        </button>
-      </div>
+    <div className="container mx-auto p-4 max-w-5xl">
+      <button onClick={() => navigate('/gestantes')} className="mb-4 bg-gray-500 text-white py-2 px-4 rounded shadow-sm">← Voltar</button>
 
-      {/* Dados pessoais */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold mb-2 text-gray-800">{usuario.nome}</h1>
-            <p className="text-gray-600 mb-1"><strong>📞 Telefone:</strong> {usuario.telefone}</p>
-            <p className="text-gray-600 mb-1"><strong>🎂 Data de Nascimento:</strong> {usuario.dataNascimento ? new Date(usuario.dataNascimento).toLocaleDateString('pt-BR') : 'Não informada'}</p>
-            <p className="text-gray-600 mb-1"><strong>🩸 DUM:</strong> {usuario.dataUltimaMenstruacao ? new Date(usuario.dataUltimaMenstruacao).toLocaleDateString('pt-BR') : 'Não informada'}</p>
-          </div>
-          <div className="text-right">
-            <span className="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
-              Paciente Ativa
-            </span>
-            <p className="text-gray-400 text-xs mt-2">
-              Cadastrada em {new Date(usuario.createdAt).toLocaleDateString('pt-BR')}
-            </p>
+      {/* CABEÇALHO */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 flex justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">{usuario.nome}</h1>
+          <p className="text-gray-600"><strong>Telefone:</strong> {usuario.telefone}</p>
+          <p className="text-gray-600"><strong>Gestação:</strong> {usuario.semanasGestacao ? `${usuario.semanasGestacao} semanas` : 'N/I'}</p>
+          <p className="text-gray-600"><strong>Contato Emergência:</strong> {usuario.nomeEmergencia} ({usuario.numeroEmergencia})</p>
+        </div>
+        <div className="text-right max-w-xs">
+          <div className="bg-orange-100 border border-orange-200 p-3 rounded text-sm text-orange-800 mb-2">
+            <strong>Histórico de Saúde:</strong> {usuario.historicoSaude || 'Nenhum relatado'}
           </div>
         </div>
       </div>
 
-      {/* Abas */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        
-        {/* Navegação das Abas */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
-          <button onClick={() => setAbaAtiva('conversas')} className={getTabClass('conversas')}>
-            💬 Histórico do Chat
-          </button>
-          <button onClick={() => setAbaAtiva('exames')} className={getTabClass('exames')}>
-            🩺 Exames
-          </button>
-          <button onClick={() => setAbaAtiva('consultas')} className={getTabClass('consultas')}>
-            📅 Consultas
-          </button>
+        <div className="flex border-b border-gray-200 bg-gray-50 overflow-x-auto">
+          <button onClick={() => setAbaAtiva('conversas')} className={getTabClass('conversas')}>💬 Chat & Sentimento</button>
+          <button onClick={() => setAbaAtiva('exames')} className={getTabClass('exames')}>🩺 Exames (Uploads)</button>
+          <button onClick={() => setAbaAtiva('topicos')} className={getTabClass('topicos')}>📝 Tópicos p/ Médico</button>
+          <button onClick={() => setAbaAtiva('consultas')} className={getTabClass('consultas')}>📅 Consultas</button>
         </div>
 
-        {/* Conteúdo Dinâmico das Abas */}
         <div className="p-0">
           
-          {/* Aba: Conversas */}
+          {/* ABA: CHAT */}
           {abaAtiva === 'conversas' && (
-            <div className="p-6 bg-gray-50/50">
-              {mensagens.length === 0 ? (
-                <div className="text-center py-10 bg-white rounded-lg border border-dashed border-gray-300">
-                  <span className="text-4xl">📭</span>
-                  <p className="text-gray-500 mt-3 font-medium">Nenhuma conversa registrada com o chatbot ainda.</p>
+            <div className="p-6 bg-gray-50 h-[500px] overflow-y-auto">
+              {usuario.mensagens?.map((msg: any) => (
+                <div key={msg.id} className={`flex flex-col mb-4 ${msg.direcao === 'entrada' ? 'items-start' : 'items-end'}`}>
+                  {/* Etiqueta de Sentimento (Somente nas respostas da IA) */}
+                  {msg.sentimento && msg.direcao === 'saida' && (
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 mr-2">
+                      Humor Detectado: <span className="text-blue-600">{msg.sentimento}</span>
+                    </span>
+                  )}
+                  
+                  <div className={`px-4 py-3 rounded-2xl max-w-md shadow-sm ${msg.direcao === 'entrada' ? 'bg-white border text-gray-800 rounded-bl-none' : 'bg-blue-600 text-white rounded-br-none'}`}>
+                    <p className="whitespace-pre-wrap">{msg.texto}</p>
+                    <p className={`text-[10px] mt-1 text-right ${msg.direcao === 'entrada' ? 'text-gray-400' : 'text-blue-200'}`}>
+                      {new Date(msg.createdAt).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                  {mensagens.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.direcao === 'entrada' ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`px-4 py-3 rounded-2xl max-w-xs md:max-w-md shadow-sm ${
-                          msg.direcao === 'entrada' ? 'bg-white border border-gray-200 text-gray-800 rounded-bl-none' : 'bg-blue-600 text-white rounded-br-none'
-                        }`}>
-                        <p className="leading-relaxed">{msg.texto}</p>
-                        <p className={`text-[10px] mt-2 text-right font-medium ${msg.direcao === 'entrada' ? 'text-gray-400' : 'text-blue-200'}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
           )}
 
-          {/* Aba: Exames */}
+          {/* ABA: EXAMES */}
           {abaAtiva === 'exames' && (
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Resultados de Exames</h3>
-                <button 
-                  onClick={() => alert("O upload de PDFs será liberado na fase 2 do projeto!")}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow transition-colors font-semibold text-sm"
-                >
-                  + Novo Exame
-                </button>
-              </div>
-
-              <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Exame</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resultado / Laudo</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anexo (PDF)</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {exames.map((exame) => (
-                      <tr key={exame.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{exame.tipo}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                          {new Date(exame.data).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600">{exame.resultado}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {exame.anexo ? (
-                            <button className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
-                              📄 Ver PDF
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 italic">Sem anexo</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button className="text-red-600 hover:text-red-800 font-medium">Excluir</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <h3 className="text-lg font-bold mb-4">Arquivos Enviados via Telegram</h3>
+              <div className="space-y-3">
+                {usuario.exames?.length === 0 && <p className="text-gray-500 italic">Nenhum exame recebido.</p>}
+                {usuario.exames?.map((exame: any) => (
+                  <div key={exame.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div>
+                      <p className="font-bold text-gray-800">{exame.tipo}</p>
+                      <p className="text-sm text-gray-500">Recebido em: {new Date(exame.dataExame).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    {exame.arquivoUrl && (
+                      <a 
+                        href={`http://localhost:3000${exame.arquivoUrl}`} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="bg-blue-100 text-blue-700 px-4 py-2 rounded font-bold text-sm hover:bg-blue-200 transition"
+                      >
+                        Baixar / Visualizar PDF
+                      </a>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Aba: Consultas */}
+          {/* ABA: TÓPICOS PARA O MÉDICO */}
+          {abaAtiva === 'topicos' && (
+            <div className="p-6">
+              <h3 className="text-lg font-bold mb-2">Tópicos e Queixas Extraídos pela IA</h3>
+              <p className="text-gray-500 mb-6 text-sm">Estes resumos foram gerados automaticamente com base nas interações da paciente.</p>
+              
+              <div className="grid gap-4">
+                {usuario.topicos?.length === 0 && <p className="text-gray-400">Nenhum tópico registrado ainda.</p>}
+                {usuario.topicos?.map((topico: any) => (
+                  <div key={topico.id} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded shadow-sm">
+                    <p className="text-gray-800 font-medium">{topico.textoResumo}</p>
+                    <p className="text-xs text-gray-400 mt-2">Data: {new Date(topico.createdAt).toLocaleDateString('pt-BR')} - Status: {topico.status.toUpperCase()}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ABA: CONSULTAS */}
           {abaAtiva === 'consultas' && (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center text-gray-500">
               <span className="text-4xl block mb-3">📅</span>
-              <h3 className="text-lg font-semibold text-gray-800">Agenda da Paciente</h3>
-              <p className="text-gray-500 mt-1 max-w-md mx-auto">
-                As consultas agendadas desta paciente aparecerão aqui. (Integração com a rota global de consultas em breve).
-              </p>
+              <p>Agenda da paciente em desenvolvimento.</p>
             </div>
           )}
 

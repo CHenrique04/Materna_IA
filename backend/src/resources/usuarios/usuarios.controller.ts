@@ -13,46 +13,35 @@ export class UsuarioController {
       res.status(500).json({ error: 'Erro ao listar usuários' });
     }
   }
+
   async buscarPorTelegramId(req: Request, res: Response) {
     try {
-      // Forçamos o TypeScript a entender que é uma string
       const telegramId = req.params.telegramId as string;
-
-      if (!telegramId) {
-        return res.status(400).json({ error: 'Telegram ID é obrigatório' });
-      }
-
+      if (!telegramId) return res.status(400).json({ error: 'Telegram ID é obrigatório' });
       const usuario = await usuarioService.buscarPorTelegramId(telegramId);
-      
-      if (!usuario) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-      }
+      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
       res.json(usuario);
     } catch (error) {
       res.status(500).json({ error: 'Erro ao buscar usuário pelo Telegram ID' });
     }
   }
 
-    async buscarPorId(req: Request, res: Response) {
+  async buscarPorId(req: Request, res: Response) {
     try {
         const { id } = req.params;
-        if (!id || typeof id !== 'string') {
-        return res.status(400).json({ error: 'ID não fornecido ou inválido' });
-        }
+        if (!id || typeof id !== 'string') return res.status(400).json({ error: 'ID não fornecido ou inválido' });
+        
         const numericId = parseInt(id);
-        if (isNaN(numericId)) {
-        return res.status(400).json({ error: 'ID deve ser um número' });
-        }
+        if (isNaN(numericId)) return res.status(400).json({ error: 'ID deve ser um número' });
 
         const usuario = await usuarioService.buscarPorId(numericId);
-        if (!usuario) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-        }
+        if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
+        
         res.json(usuario);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
-    }
+  }
 
   async criar(req: Request, res: Response) {
     try {
@@ -69,13 +58,11 @@ export class UsuarioController {
     }
   }
 
-
-    async atualizar(req: Request, res: Response) {
+  async atualizar(req: Request, res: Response) {
     try {
         const idParam = req.params.id;
-        if (!idParam || typeof idParam !== 'string') {
-        return res.status(400).json({ error: 'ID inválido' });
-        }
+        if (!idParam || typeof idParam !== 'string') return res.status(400).json({ error: 'ID inválido' });
+        
         const id = parseInt(idParam);
         if (isNaN(id)) return res.status(400).json({ error: 'ID deve ser um número' });
 
@@ -83,19 +70,18 @@ export class UsuarioController {
         res.json(usuarioAtualizado);
     } catch (error: any) {
         if (error.message === 'Usuário não encontrado') {
-        res.status(404).json({ error: error.message });
+          res.status(404).json({ error: error.message });
         } else {
-        res.status(500).json({ error: 'Erro ao atualizar usuário' });
+          res.status(500).json({ error: 'Erro ao atualizar usuário' });
         }
     }
-    }
+  }
 
-    async deletar(req: Request, res: Response) {
+  async deletar(req: Request, res: Response) {
     try {
         const idParam = req.params.id;
-        if (!idParam || typeof idParam !== 'string') {
-        return res.status(400).json({ error: 'ID inválido' });
-        }
+        if (!idParam || typeof idParam !== 'string') return res.status(400).json({ error: 'ID inválido' });
+        
         const id = parseInt(idParam);
         if (isNaN(id)) return res.status(400).json({ error: 'ID deve ser um número' });
 
@@ -103,39 +89,32 @@ export class UsuarioController {
         res.status(204).send();
     } catch (error: any) {
         if (error.message === 'Usuário não encontrado') {
-        res.status(404).json({ error: error.message });
+          res.status(404).json({ error: error.message });
         } else {
-        res.status(500).json({ error: 'Erro ao deletar usuário' });
+          res.status(500).json({ error: 'Erro ao deletar usuário' });
         }
     }
-    }
-    async buscarPorTelefone(req: Request, res: Response) {
-  try {
-    // Garantimos que pegamos o valor como string, mesmo que o TS ache que possa ser undefined
-    const telefone = req.params.telefone as string;
-
-    if (!telefone) {
-      return res.status(400).json({ error: 'Telefone é obrigatório' });
-    }
-
-    const usuario = await usuarioService.buscarPorTelefone(telefone);
-    
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
-    }
-
-    res.json(usuario);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar usuário' });
   }
-}
 
-    async listarMensagens(req: Request, res: Response) {
+  async buscarPorTelefone(req: Request, res: Response) {
+    try {
+      const telefone = req.params.telefone as string;
+      if (!telefone) return res.status(400).json({ error: 'Telefone é obrigatório' });
+      
+      const usuario = await usuarioService.buscarPorTelefone(telefone);
+      if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+      res.json(usuario);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar usuário' });
+    }
+  }
+
+  async listarMensagens(req: Request, res: Response) {
     try {
         const idParam = req.params.id;
-        if (!idParam || typeof idParam !== 'string') {
-        return res.status(400).json({ error: 'ID inválido' });
-        }
+        if (!idParam || typeof idParam !== 'string') return res.status(400).json({ error: 'ID inválido' });
+        
         const usuarioId = parseInt(idParam);
         if (isNaN(usuarioId)) return res.status(400).json({ error: 'ID deve ser um número' });
 
@@ -147,5 +126,32 @@ export class UsuarioController {
     } catch (error) {
         res.status(500).json({ error: 'Erro ao listar mensagens' });
     }
+  }
+
+  // --- NOVAS ROTAS PARA ALERTA ---
+  async listarAlertasPendentes(req: Request, res: Response) {
+    try {
+      const alertas = await usuarioService.listarAlertasPendentes();
+      res.json(alertas);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao listar alertas pendentes' });
     }
+  }
+
+  async resolverAlerta(req: Request, res: Response) {
+    try {
+      const idParam = req.params.id;
+      if (!idParam || typeof idParam !== 'string') {
+        return res.status(400).json({ error: 'ID inválido' });
+      }
+
+      const alertaId = parseInt(idParam);
+      if (isNaN(alertaId)) return res.status(400).json({ error: 'ID deve ser um número' });
+
+      const alerta = await usuarioService.resolverAlerta(alertaId);
+      res.json(alerta);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao resolver alerta' });
+    }
+  }
 }

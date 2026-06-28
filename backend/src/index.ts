@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from 'dotenv';
 import router from './router';
 import { TelegramService } from './resources/telegram/telegram.service';
+import path from 'path';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ telegramBot.start();
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('API do Chatbot Gestante funcionando!');
@@ -24,7 +26,6 @@ app.use('/api', router);
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
-
 process.on('SIGINT', async () => {
   console.log('\n🛑 Encerrando...');
   telegramBot.stop();

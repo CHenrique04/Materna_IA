@@ -50,7 +50,7 @@ model Usuario {
   telefone              String    @unique
   dataNascimento        DateTime? @db.Date 
   semanasGestacao       Int?
-  nomeEmergencia        String?   // NOVO CAMPO
+  nomeEmergencia        String?   
   numeroEmergencia      String?
   historicoSaude        String?   @db.Text
   createdAt             DateTime  @default(now())
@@ -59,12 +59,15 @@ model Usuario {
   mensagens Mensagem[]
   exames    Exame[]
   consultas Consulta[]
+  topicos   TopicoConsulta[] 
+  alertas   AlertaCritico[]  
 }
 
 model Mensagem {
   id        Int             @id @default(autoincrement())
   texto     String          @db.Text 
   direcao   DirecaoMensagem
+  sentimento String?        
   createdAt DateTime        @default(now())
 
   usuarioId Int
@@ -75,7 +78,7 @@ model Mensagem {
 
 model Exame {
   id         Int       @id @default(autoincrement())
-  tipo       String
+  tipo       String    
   dataExame  DateTime? @db.Date
   resultado  String?   @db.Text
   arquivoUrl String?   
@@ -94,6 +97,30 @@ model Consulta {
 
   usuarioId Int
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+}
+
+model TopicoConsulta {
+  id          Int      @id @default(autoincrement())
+  textoResumo String   @db.Text
+  status      String   @default("pendente") 
+  createdAt   DateTime @default(now())
+
+  usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+}
+
+model AlertaCritico {
+  id        Int      @id @default(autoincrement())
+  resumo    String   @db.Text
+  status    String   @default("pendente") 
+  createdAt DateTime @default(now())
+
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId])
 }

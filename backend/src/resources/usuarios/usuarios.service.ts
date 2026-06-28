@@ -21,7 +21,9 @@ export class UsuarioService {
       include: {
         mensagens: { orderBy: { createdAt: 'asc' } },
         exames: true,
-        consultas: true
+        consultas: true,
+        topicos: true, // NOVO: Traz os tópicos ao buscar o usuário
+        alertas: true  // NOVO: Traz os alertas ao buscar o usuário
       }
     });
     return usuario;
@@ -47,7 +49,7 @@ export class UsuarioService {
         telefone: data.telefone,
         dataNascimento: dataNasc, 
         semanasGestacao: data.semanasGestacao ?? null,
-        nomeEmergencia: data.nomeEmergencia ?? null, // Adicionado
+        nomeEmergencia: data.nomeEmergencia ?? null, 
         numeroEmergencia: data.numeroEmergencia ?? null,
         historicoSaude: data.historicoSaude ?? null
       }
@@ -91,6 +93,8 @@ export class UsuarioService {
       prisma.mensagem.deleteMany({ where: { usuarioId: id } }),
       prisma.exame.deleteMany({ where: { usuarioId: id } }),
       prisma.consulta.deleteMany({ where: { usuarioId: id } }),
+      prisma.topicoConsulta.deleteMany({ where: { usuarioId: id } }),
+      prisma.alertaCritico.deleteMany({ where: { usuarioId: id } }),
       prisma.usuario.delete({ where: { id } })
     ]);
   }
@@ -103,25 +107,74 @@ export class UsuarioService {
     return mensagens;
   }
 
-  // NOVO: Salvar a mensagem isolada no banco
-  async salvarMensagem(usuarioId: number, texto: string, direcao: 'entrada' | 'saida') {
+  // ATUALIZADO: Agora aceita o sentimento
+  async salvarMensagem(usuarioId: number, texto: string, direcao: 'entrada' | 'saida', sentimento?: string) {
     return await prisma.mensagem.create({
       data: {
         texto,
         direcao,
+        sentimento: sentimento ?? null,
         usuarioId
       }
     });
   }
 
-  // NOVO: Buscar apenas as últimas conversas para enviar como contexto à IA
   async buscarUltimasMensagens(usuarioId: number, limite: number = 10) {
     const mensagens = await prisma.mensagem.findMany({
       where: { usuarioId },
-      orderBy: { createdAt: 'desc' }, // Pega de trás pra frente
+      orderBy: { createdAt: 'desc' }, 
       take: limite
     });
-    // Inverte o array para a IA ler cronologicamente (da mais antiga pra mais nova)
     return mensagens.reverse();
+  }
+
+  // --- NOVAS FUNÇÕES PARA AS INOVAÇÕES ---
+
+  async salvarExame(usuarioId: number, tipo: string, arquivoUrl: string) {
+    return await prisma.exame.create({
+      data: {
+        usuarioId,
+        tipo,
+        arquivoUrl,
+        dataExame: new Date()
+      }
+    });
+  }
+
+  async salvarTopico(usuarioId: number, textoResumo: string) {
+    return await prisma.topicoConsulta.create({
+      data: {
+        usuarioId,
+        textoResumo
+      }
+    });
+  }
+
+  async salvarAlerta(usuarioId: number, resumo: string) {
+    return await prisma.alertaCritico.create({
+      data: {
+        usuarioId,
+        resumo
+      }
+    });
+  }
+
+  async listarAlertasPendentes() {
+    return await prisma.alertaCritico.findMany({
+      where: { status: 'pendente' },
+      include: {
+        usuario: {
+          select: { nome: true, telefone: true, nomeEmergencia: true, numeroEmergencia: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async resolverAlerta(alertaId: number) {
+    return await prisma.alertaCritico.update({
+      where: { id: alertaId },
+      data: { status: 'resolvido' }
+    });
   }
 }

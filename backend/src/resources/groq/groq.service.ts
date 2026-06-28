@@ -12,6 +12,14 @@ export interface MensagemHistorico {
   texto: string;
 }
 
+// NOVO: Interface estruturada de resposta
+export interface RespostaIA {
+  resposta: string;
+  sentimento: string | null;
+  resumoAlerta: string | null;
+  topicoConsulta: string | null;
+}
+
 export class GroqService {
   private client: OpenAI;
   private baseSystemPrompt: string;
@@ -27,22 +35,25 @@ export class GroqService {
       Seu público-alvo são mulheres grávidas ou que tiveram bebês recentemente (até 2 anos).
       
       DIRETRIZES PRINCIPAIS:
-      - Seja acolhedora, empática e respeitosa, mas também objetiva.
-      - Ofereça informações baseadas em fontes confiáveis (SUS, OMS, Sociedade Brasileira de Pediatria).
-      - NUNCA dê diagnósticos médicos – sempre recomende consultar um profissional.
-      - Responda APENAS perguntas sobre gestação, parto, pós-parto, amamentação, cuidados com o bebê, saúde mental materna, nutrição.
+      - Seja acolhedora, empática e respeitosa, mas objetiva.
+      - Ofereça informações baseadas em fontes confiáveis.
+      - NUNCA dê diagnósticos médicos.
       
       REGRAS DE COMPORTAMENTO E TRIAGEM:
-      1. Se o usuário fizer uma pergunta, responda de forma clara e direta, sem fazer perguntas adicionais no final.
-      2. Se o usuário agradecer, responda apenas com algo como "Por nada, estou aqui para ajudar!" e PARE.
-      3. NUNCA pergunte "Como posso ajudar você hoje?" a menos que o usuário tenha feito uma pergunta vaga.
-      4. VERBOSIDADE (IMPORTANTE): Se o assunto for simples, trivial ou um sintoma leve, seja DIRETA, CURTA e MENOS VERBOSA. Se o assunto for grave, envolver doenças ou riscos, forneça explicações mais detalhadas, cuidadosas e acolhedoras.
-      5. SISTEMA DE CORES (EXCLUSIVO PARA RELATO DE SINTOMAS):
-         - Se a paciente relatar um SINTOMA (ex: dor, enjoo, inchaço, sangramento, azia), você DEVE iniciar a resposta com a tag visual correspondente:
-           🟢 [VERDE - LEVE]: Sintomas normais/esperados (resposta curta).
-           🟡 [AMARELO - ATENÇÃO]: Exige observação/contato médico em breve.
-           🔴 [VERMELHO - EMERGÊNCIA]: Risco iminente, acionar protocolo detalhadamente.
-         - IMPORTANTE: Se a paciente fizer uma pergunta geral, pedir dica, tirar uma dúvida não clínica ou apenas conversar (ex: "o que levar na mala?", "posso comer sushi?", "obrigada"), NÃO UTILIZE nenhuma tag de cor. Responda normalmente sem bolinhas.
+      1. Se o assunto for simples/leve, seja DIRETA e MENOS VERBOSA. Se for grave, seja detalhada e acolhedora.
+      2. SISTEMA DE CORES (EXCLUSIVO PARA SINTOMAS):
+         - 🟢 [VERDE - LEVE]: Sintomas normais/esperados.
+         - 🟡 [AMARELO - ATENÇÃO]: Exige observação/contato médico.
+         - 🔴 [VERMELHO - EMERGÊNCIA]: Risco iminente. Acionar protocolo.
+         - IMPORTANTE: Dúvidas gerais ou conversa casual NÃO devem ter bolinhas.
+      
+      3. OBRIGATÓRIO: Você deve retornar EXCLUSIVAMENTE um objeto JSON válido, sem formatação Markdown ao redor (sem \`\`\`json), contendo as seguintes chaves:
+         {
+           "resposta": "Sua resposta formatada para a paciente (incluindo as bolinhas se for o caso).",
+           "sentimento": "Uma única palavra definindo o humor dela: Tranquila, Ansiosa, Dor, Estressada, Dúvida ou Feliz",
+           "resumoAlerta": "Se a resposta for 🔴 VERMELHA, crie um resumo de até 5 palavras do risco. Caso contrário, null.",
+           "topicoConsulta": "Se houver uma queixa amarela/vermelha ou se a paciente pedir para lembrar de algo, escreva um resumo de 1 linha para o médico. Caso contrário, null."
+         }
     `;
   }
 
@@ -55,7 +66,7 @@ export class GroqService {
     const historico = contexto.historicoSaude?.toLowerCase().trim();
     if (historico && historico !== 'não' && historico !== 'nao') {
       prompt += `\nHistórico de Saúde: ${contexto.historicoSaude}`;
-      prompt += `\nATENÇÃO MÁXIMA: Leve este histórico em consideração ABSOLUTA ao responder qualquer sintoma ou dúvida para garantir a segurança da paciente.`;
+      prompt += `\nATENÇÃO MÁXIMA: Leve este histórico em consideração ABSOLUTA ao responder.`;
     } else {
       prompt += `\nHistórico de Saúde: Sem complicações relatadas.`;
     }
@@ -63,7 +74,7 @@ export class GroqService {
     return prompt;
   }
 
-  async generateTextResponse(prompt: string, contexto: ContextoUsuario, historico: MensagemHistorico[] = []): Promise<string> {
+  async generateTextResponse(prompt: string, contexto: ContextoUsuario, historico: MensagemHistorico[] = []): Promise<RespostaIA> {
     try {
       const dynamicSystemPrompt = this.buildDynamicPrompt(contexto);
       
@@ -87,11 +98,25 @@ export class GroqService {
         model: 'llama-3.3-70b-versatile',
         messages,
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 600,
+        response_format: { type: "json_object" } // Força a saída em JSON nativo
       });
 
-      return completion.choices[0]?.message?.content || 
-        "Desculpe, não entendi. Pode repetir, mamãe? 💕";
+      const rawContent = completion.choices[0]?.message?.content || "{}";
+      
+      // Parseia o JSON retornado pela IA
+      try {
+        const parsedData = JSON.parse(rawContent) as RespostaIA;
+        return parsedData;
+      } catch (parseError) {
+        console.error("Falha ao parsear JSON da IA:", rawContent);
+        return {
+          resposta: "Desculpe, mamãe, tive um probleminha para processar isso. Pode repetir? 💕",
+          sentimento: null,
+          resumoAlerta: null,
+          topicoConsulta: null
+        };
+      }
     } catch (error) {
       console.error('Erro no Groq:', error);
       throw error;
