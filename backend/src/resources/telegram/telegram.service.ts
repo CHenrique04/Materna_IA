@@ -52,93 +52,91 @@ export class TelegramService {
       }
     });
 
-   // ----------------------------------------------------
-// TRATAMENTO DE IMAGENS E DOCUMENTOS (EXAMES) - ATUALIZADO
-// ----------------------------------------------------
-this.bot.on(['photo', 'document'], async (ctx) => {
-  const userId = ctx.from.id;
-  let state = this.userStates.get(userId);
+    // ----------------------------------------------------
+    // TRATAMENTO DE IMAGENS E DOCUMENTOS (EXAMES)
+    // ----------------------------------------------------
+    this.bot.on(['photo', 'document'], async (ctx) => {
+      const userId = ctx.from.id;
+      let state = this.userStates.get(userId);
 
-  if (!state || state.step !== 'registered') {
-    await ctx.reply('Por favor, complete seu cadastro antes de enviar exames. Digite /start.');
-    return;
-  }
-
-  if (!ctx.message) return;
-
-  try {
-    await ctx.sendChatAction('typing');
-    const usuarioId = state.usuarioId!;
-    
-    const msg = ctx.message as any;
-    let fileId: string | null = null;
-    let fileType: 'photo' | 'document' = 'document';
-    let fileName = '';
-
-    // --- Identifica o tipo e obtém o fileId ---
-    if (msg.photo && msg.photo.length > 0) {
-      fileId = msg.photo[msg.photo.length - 1].file_id;
-      fileType = 'photo';
-      fileName = `foto_${Date.now()}.jpg`;
-    } else if (msg.document) {
-      fileId = msg.document.file_id;
-      fileType = 'document';
-      // Tenta usar o nome original do documento
-      fileName = msg.document.file_name || `documento_${Date.now()}.pdf`;
-      // Se a extensão for .circ, substitui por .pdf (ou mantém)
-      if (fileName.endsWith('.circ')) {
-        fileName = fileName.replace(/\.circ$/, '.pdf');
+      if (!state || state.step !== 'registered') {
+        await ctx.reply('Por favor, complete seu cadastro antes de enviar exames. Digite /start.');
+        return;
       }
-    }
 
-    if (!fileId) {
-      await ctx.reply('Formato de arquivo não reconhecido.');
-      return;
-    }
+      if (!ctx.message) return;
 
-    // --- Obtém o link do arquivo no Telegram ---
-    const fileLink = await ctx.telegram.getFileLink(fileId);
+      try {
+        await ctx.sendChatAction('typing');
+        const usuarioId = state.usuarioId!;
+        
+        const msg = ctx.message as any;
+        let fileId: string | null = null;
+        let fileType: 'photo' | 'document' = 'document';
+        let fileName = '';
 
-    // --- Baixa o arquivo e salva localmente ---
-    const uploadDir = path.join(__dirname, '../../uploads/exames');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+        // Identifica o tipo e obtém o fileId
+        if (msg.photo && msg.photo.length > 0) {
+          fileId = msg.photo[msg.photo.length - 1].file_id;
+          fileType = 'photo';
+          fileName = `foto_${Date.now()}.jpg`;
+        } else if (msg.document) {
+          fileId = msg.document.file_id;
+          fileType = 'document';
+          fileName = msg.document.file_name || `documento_${Date.now()}.pdf`;
+          if (fileName.endsWith('.circ')) {
+            fileName = fileName.replace(/\.circ$/, '.pdf');
+          }
+        }
 
-    const localFilePath = path.join(uploadDir, fileName);
-    const writer = fs.createWriteStream(localFilePath);
+        if (!fileId) {
+          await ctx.reply('Formato de arquivo não reconhecido.');
+          return;
+        }
 
-    const response = await axios({
-      method: 'GET',
-      url: fileLink.toString(),
-      responseType: 'stream',
+        const fileLink = await ctx.telegram.getFileLink(fileId);
+
+        // Baixa o arquivo e salva localmente
+        const uploadDir = path.join(process.cwd(), 'uploads/exames');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        const localFilePath = path.join(uploadDir, fileName);
+        const writer = fs.createWriteStream(localFilePath);
+
+        const response = await axios({
+          method: 'GET',
+          url: fileLink.toString(),
+          responseType: 'stream',
+        });
+
+        response.data.pipe(writer);
+
+        await new Promise((resolve, reject) => {
+          writer.on('finish', resolve);
+          writer.on('error', reject);
+        });
+
+        // Salva no banco de dados com a URL absoluta do backend
+        const caminhoAbsoluto = `http://localhost:3000/uploads/exames/${fileName}`;
+        await this.usuarioService.salvarExame(
+          usuarioId,
+          fileType === 'photo' ? 'Imagem' : 'Documento',
+          caminhoAbsoluto 
+        );
+
+        await ctx.reply(
+          `✅ ${fileType === 'photo' ? 'Imagem' : 'Documento'} recebido e salvo com sucesso! 📁\n` +
+          `Nome: ${fileName}\n` +
+          `Seu médico já pode visualizá-lo no sistema.`
+        );
+      } catch (error) {
+        console.error('Erro ao salvar arquivo:', error);
+        await ctx.reply('❌ Tive um problema para salvar seu exame. Tente novamente mais tarde.');
+      }
     });
 
-    response.data.pipe(writer);
-
-    await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-
-    // --- Salva no banco de dados (caminho local) ---
-    const caminhoRelativo = `http://localhost:3000/uploads/exames/${fileName}`;
-    await this.usuarioService.salvarExame(
-      usuarioId,
-      fileType === 'photo' ? 'Imagem' : 'Documento',
-      caminhoRelativo 
-    );
-
-    await ctx.reply(
-      `✅ ${fileType === 'photo' ? 'Imagem' : 'Documento'} recebido e salvo com sucesso! 📁\n` +
-      `Nome: ${fileName}\n` +
-      `Seu médico já pode visualizá-lo no sistema.`
-    );
-  } catch (error) {
-    console.error('Erro ao salvar arquivo:', error);
-    await ctx.reply('❌ Tive um problema para salvar seu exame. Tente novamente mais tarde.');
-  }
-});
     // ----------------------------------------------------
     // MENSAGENS DE TEXTO
     // ----------------------------------------------------
@@ -247,9 +245,23 @@ this.bot.on(['photo', 'document'], async (ctx) => {
             const usuarioId = state.usuarioId!;
 
             const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
-            const contexto = {
+            
+            // --- INOVAÇÃO: Busca tópicos anteriores para dar contexto à IA ---
+            let topicosPendentes: any[] = [];
+            try {
+              topicosPendentes = await this.usuarioService.buscarTopicos(usuarioId) || [];
+            } catch (err) {
+              console.log("Nenhum tópico encontrado ou erro ao buscar");
+            }
+            
+            const listaTopicos = topicosPendentes.length > 0 
+              ? topicosPendentes.map((t: any) => t.textoResumo).join('; ') 
+              : null;
+
+            const contexto: any = {
               semanasGestacao: usuarioDados?.semanasGestacao ?? null,
-              historicoSaude: usuarioDados?.historicoSaude ?? null
+              historicoSaude: usuarioDados?.historicoSaude ?? null,
+              queixasAtuais: listaTopicos
             };
 
             await this.usuarioService.salvarMensagem(usuarioId, text, 'entrada');
@@ -260,18 +272,14 @@ this.bot.on(['photo', 'document'], async (ctx) => {
               texto: m.texto
             }));
 
-            // Agora o Groq devolve um JSON parseado!
             const iaResponse = await this.groqService.generateTextResponse(text, contexto, historicoFormatado);
 
-            // Salva a resposta da IA junto com o sentimento detectado
             await this.usuarioService.salvarMensagem(usuarioId, iaResponse.resposta, 'saida', iaResponse.sentimento || undefined);
 
-            // Se a IA gerou um alerta vermelho, salva no banco
             if (iaResponse.resumoAlerta) {
               await this.usuarioService.salvarAlerta(usuarioId, iaResponse.resumoAlerta);
             }
 
-            // Se a IA destacou um tópico para a consulta, salva no banco
             if (iaResponse.topicoConsulta) {
               await this.usuarioService.salvarTopico(usuarioId, iaResponse.topicoConsulta);
             }
@@ -313,9 +321,23 @@ this.bot.on(['photo', 'document'], async (ctx) => {
         
         const usuarioId = state.usuarioId!;
         const usuarioDados = await this.usuarioService.buscarPorId(usuarioId);
-        const contexto = {
+        
+        // Busca tópicos para o contexto do áudio também
+        let topicosPendentes: any[] = [];
+        try {
+          topicosPendentes = await this.usuarioService.buscarTopicos(usuarioId) || [];
+        } catch (err) {
+          console.log("Nenhum tópico encontrado ou erro ao buscar");
+        }
+        
+        const listaTopicos = topicosPendentes.length > 0 
+          ? topicosPendentes.map((t: any) => t.textoResumo).join('; ') 
+          : null;
+
+        const contexto: any = {
           semanasGestacao: usuarioDados?.semanasGestacao ?? null,
-          historicoSaude: usuarioDados?.historicoSaude ?? null
+          historicoSaude: usuarioDados?.historicoSaude ?? null,
+          queixasAtuais: listaTopicos
         };
 
         await this.usuarioService.salvarMensagem(usuarioId, textoTranscrito, 'entrada');
@@ -328,7 +350,7 @@ this.bot.on(['photo', 'document'], async (ctx) => {
 
         const iaResponse = await this.groqService.generateTextResponse(textoTranscrito, contexto, historicoFormatado);
         
-        // Salvamentos das Inovações
+        // Salvamentos
         await this.usuarioService.salvarMensagem(usuarioId, iaResponse.resposta, 'saida', iaResponse.sentimento || undefined);
         if (iaResponse.resumoAlerta) await this.usuarioService.salvarAlerta(usuarioId, iaResponse.resumoAlerta);
         if (iaResponse.topicoConsulta) await this.usuarioService.salvarTopico(usuarioId, iaResponse.topicoConsulta);
@@ -338,8 +360,12 @@ this.bot.on(['photo', 'document'], async (ctx) => {
         await ctx.replyWithVoice({ source: audioBuffer });
         await ctx.reply(`📝 *Você disse:*\n"${textoTranscrito}"`, { parse_mode: 'Markdown' });
 
-        if (iaResponse.resumoAlerta) {
-          await ctx.reply(`⚠️ *ALERTA RECEBIDO NO ÁUDIO:*\n\n${iaResponse.resposta}`, { parse_mode: 'Markdown' });
+        // --- GARANTIA PARA EMERGÊNCIAS (GRAVE) ---
+        if (iaResponse.resumoAlerta || iaResponse.resposta.includes('🔴')) {
+          await ctx.reply(
+            `🚨 *ATENÇÃO - ALERTA MÉDICO DE EMERGÊNCIA:* 🚨\n\n${iaResponse.resposta}\n\n*Por favor, siga as instruções acima imediatamente.*`, 
+            { parse_mode: 'Markdown' }
+          );
         }
       } catch (error) {
         console.error('Erro ao processar áudio:', error);

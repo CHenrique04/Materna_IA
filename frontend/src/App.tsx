@@ -147,7 +147,6 @@ function App() {
               <div className="flex space-x-6 items-center">
                 <Link to="/gestantes" className="text-gray-600 hover:text-blue-600 font-medium">Gestantes</Link>
                 <Link to="/administradores" className="text-gray-600 hover:text-blue-600 font-medium">Administradores</Link>
-                <Link to="/consultas" className="text-gray-600 hover:text-blue-600 font-medium">Consultas</Link>
                 <button onClick={() => { sessionStorage.removeItem('token'); window.location.reload(); }} className="text-red-500 font-bold ml-4 px-3 py-1 bg-red-50 rounded">Sair</button>
               </div>
             </div>

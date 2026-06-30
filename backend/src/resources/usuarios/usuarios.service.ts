@@ -140,6 +140,12 @@ export class UsuarioService {
       }
     });
   }
+  async buscarTopicos(usuarioId: number) {
+    return await prisma.topicoConsulta.findMany({
+      where: { usuarioId },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
 
   async salvarTopico(usuarioId: number, textoResumo: string) {
     return await prisma.topicoConsulta.create({
@@ -177,4 +183,5 @@ export class UsuarioService {
       data: { status: 'resolvido' }
     });
   }
+  
 }
